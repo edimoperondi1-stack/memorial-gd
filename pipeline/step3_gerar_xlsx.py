@@ -159,7 +159,11 @@ def gerar_xlsx(caminho_preenchido: str, pasta_saida: str, nome_titular: str, cod
         if nome_aba != "SAIDA":
             del wb[nome_aba]
 
-    # 5b. Aplicar os 8 ajustes de formato (inclui proteção e sheet_state=hidden)
+    # 5b. Criar Planilha1 como aba auxiliar visível (obrigatória para poder ocultar SAIDA)
+    # A planilha oficial de referência também possui esta aba
+    wb.create_sheet("Planilha1")
+
+    # 5c. Aplicar os 8 ajustes de formato (inclui proteção e sheet_state=hidden)
     _aplicar_ajustes_formato(ws)
 
     # 6. Salvar com o nome correto
