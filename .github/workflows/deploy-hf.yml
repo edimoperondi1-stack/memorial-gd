@@ -18,4 +18,4 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git push https://Edimoperondi:$HF_TOKEN@huggingface.co/spaces/Edimoperondi/Memorial_GD main
+          git push --force https://Edimoperondi:$HF_TOKEN@huggingface.co/spaces/Edimoperondi/Memorial_GD main
