@@ -10,12 +10,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          lfs: true
 
-      - name: Push to Hugging Face Space
+      - name: Install huggingface_hub
+        run: pip install huggingface_hub
+
+      - name: Upload to Hugging Face Space
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          git push --force https://Edimoperondi:$HF_TOKEN@huggingface.co/spaces/Edimoperondi/Memorial_GD main
+          python - <<'EOF'
+          import os
+          from huggingface_hub import HfApi
+
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.upload_folder(
+              folder_path=".",
+              repo_id="Edimoperondi/Memorial_GD",
+              repo_type="space",
+              ignore_patterns=[
+                  ".git*",
+                  ".planning*",
+                  "terraform*",
+                  "__pycache__*",
+                  "*.pyc",
+                  "*.pdf",
+                  "data/output*",
+                  "pipeline/api/projetos_salvos*",
+                  "debug*.py",
+                  "test_*.py",
+                  "testar_*.py",
+              ],
+          )
+          print("Deploy concluido com sucesso!")
+          EOF
