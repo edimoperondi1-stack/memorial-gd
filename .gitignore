@@ -55,6 +55,7 @@ debug*.py
 check_*.py
 pesquisar_*.py
 test_*.py
+!pipeline/test_xlsx_correcoes.py
 testar_*.py
 test_*.xlsx
 frontend_preview.html
