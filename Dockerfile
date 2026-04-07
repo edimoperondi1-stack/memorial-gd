@@ -14,6 +14,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 # ── Instalar LibreOffice, gcc (para socket shim) e dependências ───────
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice-calc \
+    libreoffice-writer \
     libreoffice-core \
     fonts-liberation \
     fonts-dejavu-core \
