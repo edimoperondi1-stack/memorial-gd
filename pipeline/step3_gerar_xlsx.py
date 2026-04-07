@@ -162,6 +162,8 @@ def gerar_xlsx(caminho_preenchido: str, pasta_saida: str, nome_titular: str, cod
     # 5b. Criar Planilha1 como aba auxiliar visível (obrigatória para poder ocultar SAIDA)
     # A planilha oficial de referência também possui esta aba
     wb.create_sheet("Planilha1")
+    # Garantir que SAIDA permanece como aba ativa no workbook
+    wb.active = wb.index(ws)
 
     # 5c. Aplicar os 8 ajustes de formato (inclui proteção e sheet_state=hidden)
     _aplicar_ajustes_formato(ws)
@@ -190,7 +192,7 @@ def validar_xlsx_saida(caminho_xlsx: str) -> dict:
     Retorna dict com os valores dos campos críticos e lista de problemas.
     """
     wb = load_workbook(caminho_xlsx, data_only=True)
-    ws = wb.active
+    ws = wb["SAIDA"] if "SAIDA" in wb.sheetnames else wb.active
 
     # Mapear cabeçalhos da linha 1
     headers = {}
