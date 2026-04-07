@@ -21,8 +21,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libc6-dev \
     coreutils \
+    locales \
+    && sed -i 's/# pt_BR.UTF-8 UTF-8/pt_BR.UTF-8 UTF-8/' /etc/locale.gen \
+    && locale-gen \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Locale pt_BR para LibreOffice usar vírgula como separador decimal
+ENV LANG=pt_BR.UTF-8
+ENV LC_ALL=pt_BR.UTF-8
+ENV LC_NUMERIC=pt_BR.UTF-8
 
 # ── Configurar ambiente LibreOffice headless ──────────────────────────
 ENV SAL_USE_VCLPLUGIN=svp
