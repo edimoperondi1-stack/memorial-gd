@@ -14,7 +14,9 @@ import shutil
 import tempfile
 from pathlib import Path
 from openpyxl import load_workbook
-from openpyxl.utils import column_index_from_string
+from openpyxl.utils import column_index_from_string, get_column_letter
+from openpyxl.worksheet.protection import SheetProtection
+from openpyxl.worksheet.properties import PageSetupProperties
 
 
 # Intervalo copiado pela macro: A1:FA5
@@ -35,6 +37,66 @@ def _normalizar_valor(val):
         v = val.strip()
         return v if v else None   # string vazia → None
     return val
+
+
+def _aplicar_ajustes_formato(ws) -> None:
+    """
+    Aplica os 8 ajustes de formato para que o XLSX de saída seja idêntico
+    à planilha oficial de referência aceita pela Energisa.
+
+    Deve ser chamada APÓS o preenchimento de valores e ANTES de wb.save().
+    """
+    # Correção 1 — Células AT2:DR2 devem ser string vazia, não None
+    # AT=46, DR=122 inclusive
+    for col in range(46, 123):
+        cell = ws.cell(row=2, column=col)
+        if cell.value is None:
+            cell.value = ""
+
+    # Correção 2 — F2 (telefone), G2 (CPF), M2 (CEP) devem ser tipo numérico
+    for col_letter in ["F", "G", "M"]:
+        cell = ws[f"{col_letter}2"]
+        if isinstance(cell.value, str):
+            cleaned = (
+                cell.value
+                .replace(".", "")
+                .replace("-", "")
+                .replace("/", "")
+                .replace(" ", "")
+            )
+            if cleaned.isdigit():
+                cell.value = int(cleaned)
+            else:
+                try:
+                    cell.value = float(cleaned)
+                except ValueError:
+                    pass  # manter como string se não converter
+
+    # Correção 3 — Sheet protection na aba SAIDA (sem senha, como na planilha oficial)
+    ws.protection = SheetProtection(sheet=True, password=None)
+
+    # Correção 4 — Aba SAIDA deve ficar oculta (sheet_state = "hidden")
+    # Definido aqui; aplicado após remoção das outras abas para evitar conflito.
+    ws.sheet_state = "hidden"
+
+    # Correção 5 — Formato numérico de AJ2 deve ser "General"
+    ws["AJ2"].number_format = "General"
+
+    # Correção 6 — Largura das colunas DL (116) e DM (117) = 36.43
+    ws.column_dimensions[get_column_letter(116)].width = 36.43  # DL
+    ws.column_dimensions[get_column_letter(117)].width = 36.43  # DM
+
+    # Correção 7 — Margens de header e footer de impressão = 0.315 polegadas
+    ws.page_margins.header = 0.315
+    ws.page_margins.footer = 0.315
+
+    # Correção 8 — Remover fitToWidth e fitToHeight da configuração de página
+    ws.page_setup.fitToWidth = None
+    ws.page_setup.fitToHeight = None
+    # Garantir que fitToPage não está ativo
+    if ws.sheet_properties.pageSetUpPr is None:
+        ws.sheet_properties.pageSetUpPr = PageSetupProperties()
+    ws.sheet_properties.pageSetUpPr.fitToPage = False
 
 
 def gerar_xlsx(caminho_preenchido: str, pasta_saida: str, nome_titular: str, codigo_uc: str) -> str:
@@ -90,11 +152,15 @@ def gerar_xlsx(caminho_preenchido: str, pasta_saida: str, nome_titular: str, cod
             elif (row, col) in valores:
                 cell.value = valores[(row, col)]
 
-    # 5. Tornar SAIDA visível e remover todas as outras abas
+    # 5. Remover todas as abas exceto SAIDA
+    # Tornar SAIDA visível temporariamente para permitir a remoção das outras abas
     ws.sheet_state = "visible"
-    for nome_aba in wb.sheetnames:
+    for nome_aba in list(wb.sheetnames):
         if nome_aba != "SAIDA":
             del wb[nome_aba]
+
+    # 5b. Aplicar os 8 ajustes de formato (inclui proteção e sheet_state=hidden)
+    _aplicar_ajustes_formato(ws)
 
     # 6. Salvar com o nome correto
     nome_titular_sanitizado = nome_titular.upper().strip()
