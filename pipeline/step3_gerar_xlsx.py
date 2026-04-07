@@ -10,8 +10,10 @@ Replica exatamente o que a macro VBA faz:
   PasteSpecial xlPasteValues em A1:FA5 → novo workbook com 1 aba → salva como .xlsx
 """
 
+import re
 import shutil
 import tempfile
+import zipfile
 from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl.utils import column_index_from_string, get_column_letter
@@ -22,6 +24,34 @@ from openpyxl.worksheet.properties import PageSetupProperties
 # Intervalo copiado pela macro: A1:FA5
 COL_MAX = column_index_from_string("FA")   # 157
 ROW_MAX = 5
+
+
+def _patch_empty_inline_strings(caminho_xlsx: str) -> None:
+    """
+    Corrige um bug do openpyxl: células com valor "" são serializadas como
+    <c t="inlineStr"></c> (sem <is><t/></is>), fazendo load_workbook retornar
+    None em vez de "". Este patch reescreve o XML para incluir <is><t/></is>.
+    """
+    tmp = caminho_xlsx + ".patch.tmp"
+    try:
+        with zipfile.ZipFile(caminho_xlsx, "r") as zin:
+            with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    data = zin.read(item.filename)
+                    if item.filename.startswith("xl/worksheets/"):
+                        xml = data.decode("utf-8")
+                        # Transforma <c ... t="inlineStr"></c>  →  <c ... t="inlineStr"><is><t/></is></c>
+                        xml = re.sub(
+                            r'(<c [^>]*t="inlineStr")[^<]*(/>|></c>)',
+                            r'\1><is><t/></is></c>',
+                            xml,
+                        )
+                        data = xml.encode("utf-8")
+                    zout.writestr(item, data)
+        Path(tmp).replace(caminho_xlsx)
+    except Exception as e:
+        Path(tmp).unlink(missing_ok=True)
+        raise RuntimeError(f"Falha ao aplicar patch de strings vazias: {e}") from e
 
 
 def _normalizar_valor(val):
@@ -162,11 +192,13 @@ def gerar_xlsx(caminho_preenchido: str, pasta_saida: str, nome_titular: str, cod
     # 5b. Criar Planilha1 como aba auxiliar visível (obrigatória para poder ocultar SAIDA)
     # A planilha oficial de referência também possui esta aba
     wb.create_sheet("Planilha1")
-    # Garantir que SAIDA permanece como aba ativa no workbook
-    wb.active = wb.index(ws)
 
     # 5c. Aplicar os 8 ajustes de formato (inclui proteção e sheet_state=hidden)
     _aplicar_ajustes_formato(ws)
+
+    # 5d. Garantir que SAIDA permanece como aba ativa APÓS ocultá-la
+    # (deve ser definido depois de sheet_state=hidden para não ser revertido)
+    wb.active = wb.index(ws)
 
     # 6. Salvar com o nome correto
     nome_titular_sanitizado = nome_titular.upper().strip()
@@ -178,6 +210,9 @@ def gerar_xlsx(caminho_preenchido: str, pasta_saida: str, nome_titular: str, cod
 
     wb.save(caminho_saida)
     wb.close()
+
+    # 6b. Patch pós-salvamento: corrige células "" serializadas incorretamente pelo openpyxl
+    _patch_empty_inline_strings(caminho_saida)
 
     # Limpar temp
     Path(tmp_path).unlink(missing_ok=True)
