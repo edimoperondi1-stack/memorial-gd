@@ -35,7 +35,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Template Excel (arquivo base do memorial)
-COPY "MEMORIAL_GD_v4-22022022 (54).xlsx" .
+COPY ["MEMORIAL_GD_v4-22022022 (54).xlsx", "."]
 
 # Pipeline Python
 COPY pipeline/ pipeline/
