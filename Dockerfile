@@ -37,6 +37,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Template Excel (arquivo base do memorial)
 COPY ["MEMORIAL_GD_v4-22022022 (54).xlsx", "."]
 
+# Template Word da procuração (base para geração do PDF)
+COPY ["PROCURAÇÃO ENERGISA MT - CERÂMICA PROGRESSO.docx", "."]
+
 # Pipeline Python
 COPY pipeline/ pipeline/
 

@@ -65,6 +65,7 @@ TESTE*.pdf
 TESTE*.xlsx
 TEST_*.pdf
 *.docx
+!PROCURAÇÃO ENERGISA MT - CERÂMICA PROGRESSO.docx
 pipeline_output.*
 
 # === DADOS DE PROJETOS SALVOS (dados de clientes) ===
