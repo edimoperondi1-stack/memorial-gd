@@ -26,32 +26,89 @@ COL_MAX = column_index_from_string("FA")   # 157
 ROW_MAX = 5
 
 
-def _patch_empty_inline_strings(caminho_xlsx: str) -> None:
+def _patch_xlsx_saida(caminho_xlsx: str) -> None:
     """
-    Corrige um bug do openpyxl: células com valor "" são serializadas como
-    <c t="inlineStr"></c> (sem <is><t/></is>), fazendo load_workbook retornar
-    None em vez de "". Este patch reescreve o XML para incluir <is><t/></is>.
+    Correções pós-salvamento no XLSX gerado (bugs do openpyxl):
+
+    1. Células "" serializadas como <c t="inlineStr"></c> sem <is><t/></is>
+       → openpyxl lê de volta como None; patch adiciona <is><t/></is>.
+
+    2. activeTab="1" no workbook.xml (openpyxl aponta para Planilha1 quando
+       SAIDA está oculta) → corrigido para activeTab="0" (SAIDA = índice 0).
+
+    3. tabSelected="1" ausente no sheetView da aba SAIDA
+       → adicionado para que SAIDA seja a aba ativa como na referência oficial.
     """
     tmp = caminho_xlsx + ".patch.tmp"
+
+    # Descobrir qual arquivo XML corresponde à aba SAIDA via workbook.xml + rels
+    saida_xml_path = None
+    try:
+        with zipfile.ZipFile(caminho_xlsx, "r") as zin:
+            wb_xml  = zin.read("xl/workbook.xml").decode("utf-8")
+            rels_xml = zin.read("xl/_rels/workbook.xml.rels").decode("utf-8")
+
+        # rId → Target  (aceita qualquer ordem dos atributos)
+        rid_to_target = {}
+        for m in re.finditer(r"<Relationship\b([^>]+)>", rels_xml):
+            tag = m.group(1)
+            id_m  = re.search(r'Id="(rId\d+)"', tag)
+            tgt_m = re.search(r'Target="([^"]+)"', tag)
+            if id_m and tgt_m:
+                rid_to_target[id_m.group(1)] = tgt_m.group(1)
+
+        # rId da aba SAIDA
+        saida_rid = re.search(r'<sheet\b[^>]*\bname="SAIDA"[^>]*\br:id="(rId\d+)"', wb_xml)
+        if saida_rid:
+            target = rid_to_target.get(saida_rid.group(1), "")
+            if target:
+                saida_xml_path = f"xl/{target}"
+    except Exception:
+        pass  # Se não conseguiu descobrir, aplica apenas o fix de strings
+
     try:
         with zipfile.ZipFile(caminho_xlsx, "r") as zin:
             with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
                 for item in zin.infolist():
                     data = zin.read(item.filename)
-                    if item.filename.startswith("xl/worksheets/"):
+
+                    if item.filename == "xl/workbook.xml":
                         xml = data.decode("utf-8")
-                        # Transforma <c ... t="inlineStr"></c>  →  <c ... t="inlineStr"><is><t/></is></c>
+                        # Fix 2: SAIDA (índice 0) deve ser a aba ativa
+                        xml = re.sub(r'activeTab="\d+"', 'activeTab="0"', xml)
+                        data = xml.encode("utf-8")
+
+                    elif saida_xml_path and item.filename == saida_xml_path:
+                        xml = data.decode("utf-8")
+                        # Fix 1: células "" → <is><t/></is>
                         xml = re.sub(
                             r'(<c [^>]*t="inlineStr")[^<]*(/>|></c>)',
                             r'\1><is><t/></is></c>',
                             xml,
                         )
+                        # Fix 3: tabSelected="1" na sheetView da SAIDA
+                        if 'tabSelected="1"' not in xml:
+                            xml = re.sub(r"(<sheetView\b)", r'\1 tabSelected="1"', xml, count=1)
                         data = xml.encode("utf-8")
+
+                    elif item.filename.startswith("xl/worksheets/"):
+                        xml = data.decode("utf-8")
+                        # Fix 1 (outras abas): células "" → <is><t/></is>
+                        xml = re.sub(
+                            r'(<c [^>]*t="inlineStr")[^<]*(/>|></c>)',
+                            r'\1><is><t/></is></c>',
+                            xml,
+                        )
+                        # Fix 3b: remover tabSelected das abas que não são SAIDA
+                        xml = re.sub(r'\s+tabSelected="\d+"', "", xml)
+                        data = xml.encode("utf-8")
+
                     zout.writestr(item, data)
+
         Path(tmp).replace(caminho_xlsx)
     except Exception as e:
         Path(tmp).unlink(missing_ok=True)
-        raise RuntimeError(f"Falha ao aplicar patch de strings vazias: {e}") from e
+        raise RuntimeError(f"Falha ao aplicar patch no XLSX de saída: {e}") from e
 
 
 def _normalizar_valor(val):
@@ -76,9 +133,9 @@ def _aplicar_ajustes_formato(ws) -> None:
 
     Deve ser chamada APÓS o preenchimento de valores e ANTES de wb.save().
     """
-    # Correção 1 — Células AT2:DR2 devem ser string vazia, não None
-    # AT=46, DR=122 inclusive
-    for col in range(46, 123):
+    # Correção 1 — Células AK2:DR2 devem ser string vazia, não None
+    # AK=37, DR=122 inclusive (VBA PasteSpecial xlPasteValues escreve "" para fórmulas vazias)
+    for col in range(37, 123):
         cell = ws.cell(row=2, column=col)
         if cell.value is None:
             cell.value = ""
@@ -112,13 +169,15 @@ def _aplicar_ajustes_formato(ws) -> None:
     # Correção 5 — Formato numérico de AJ2 deve ser "General"
     ws["AJ2"].number_format = "General"
 
-    # Correção 6 — Largura das colunas DL (116) e DM (117) = 36.43
-    ws.column_dimensions[get_column_letter(116)].width = 36.43  # DL
-    ws.column_dimensions[get_column_letter(117)].width = 36.43  # DM
+    # Correção 6 — Largura das colunas DL (116) e DM (117) = 36.42578125 chars
+    # (valor exato da planilha oficial de referência)
+    ws.column_dimensions[get_column_letter(116)].width = 36.42578125  # DL
+    ws.column_dimensions[get_column_letter(117)].width = 36.42578125  # DM
 
-    # Correção 7 — Margens de header e footer de impressão = 0.315 polegadas
-    ws.page_margins.header = 0.315
-    ws.page_margins.footer = 0.315
+    # Correção 7 — Margens de header e footer = 8 mm em polegadas (0.31496062992...)
+    # (valor exato da planilha oficial de referência)
+    ws.page_margins.header = 0.31496062992125984
+    ws.page_margins.footer = 0.31496062992125984
 
     # Correção 8 — Remover fitToWidth e fitToHeight da configuração de página
     ws.page_setup.fitToWidth = None
@@ -211,8 +270,8 @@ def gerar_xlsx(caminho_preenchido: str, pasta_saida: str, nome_titular: str, cod
     wb.save(caminho_saida)
     wb.close()
 
-    # 6b. Patch pós-salvamento: corrige células "" serializadas incorretamente pelo openpyxl
-    _patch_empty_inline_strings(caminho_saida)
+    # 6b. Patch pós-salvamento: corrige células "", activeTab e tabSelected
+    _patch_xlsx_saida(caminho_saida)
 
     # Limpar temp
     Path(tmp_path).unlink(missing_ok=True)
