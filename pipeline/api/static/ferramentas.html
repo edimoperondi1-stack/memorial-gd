@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ferramentas de Dimensionamento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0c0f14;
+            --bg-card: #151921;
+            --bg-card-hover: #1a1f2b;
+            --bg-input: #1c2230;
+            --border: #2a3040;
+            --border-focus: #f59e0b;
+            --text: #e8eaed;
+            --text-muted: #7c8496;
+            --text-dim: #505868;
+            --amber: #f59e0b;
+            --amber-soft: rgba(245,158,11,0.12);
+            --amber-glow: rgba(245,158,11,0.25);
+            --green: #22c55e;
+            --green-soft: rgba(34,197,94,0.12);
+            --red: #ef4444;
+            --red-soft: rgba(239,68,68,0.12);
+            --blue: #3b82f6;
+            --blue-soft: rgba(59,130,246,0.1);
+            --radius: 10px;
+            --radius-lg: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Subtle gradient background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(ellipse 600px 400px at 20% 10%, rgba(245,158,11,0.04), transparent),
+                radial-gradient(ellipse 500px 350px at 80% 80%, rgba(59,130,246,0.03), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Header ───────────────────────────────────────────── */
+        header {
+            background: rgba(21,25,33,0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(245,158,11,0.1);
+            padding: 0.9rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 0.85rem; }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--amber), #d97706);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 0 20px rgba(245,158,11,0.2);
+        }
+
+        header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--text);
+        }
+
+        header .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .btn-demo {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.2);
+            color: var(--amber);
+            padding: 0.4rem 0.9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .btn-demo:hover {
+            background: rgba(245,158,11,0.15);
+            border-color: rgba(245,158,11,0.4);
+            box-shadow: 0 0 12px rgba(245,158,11,0.1);
+        }
+
+        /* ── Container ────────────────────────────────────────── */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Section cards ────────────────────────────────────── */
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s;
+            animation: fadeInUp 0.5s ease-out both;
+        }
+
+        .section:hover {
+            border-color: rgba(245,158,11,0.15);
+        }
+
+        .section:nth-child(1) { animation-delay: 0.05s; }
+        .section:nth-child(2) { animation-delay: 0.1s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1.1rem;
+            letter-spacing: -0.01em;
+        }
+
+        .section-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--amber-soft);
+            color: var(--amber);
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .section-hint {
+            font-size: 0.73rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        /* ── Grid ─────────────────────────────────────────────── */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+        .field { display: flex; flex-direction: column; }
+        .field.span-2 { grid-column: span 2; }
+        .field.span-3 { grid-column: span 3; }
+
+        /* ── Labels & Inputs ──────────────────────────────────── */
+        label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        input, select {
+            padding: 0.55rem 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem;
+            color: var(--text);
+            background: var(--bg-input);
+            transition: all 0.2s;
+        }
+
+        input::placeholder { color: var(--text-dim); }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--amber);
+            box-shadow: 0 0 0 3px var(--amber-soft), 0 0 12px rgba(245,158,11,0.08);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237c8496' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            padding-right: 2rem;
+        }
+
+        select option {
+            background: var(--bg-card);
+            color: var(--text);
+        }
+
+        input[type="number"] { -moz-appearance: textfield; }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        /* ── Sub-section title ────────────────────────────────── */
+        .sub-section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin: 1rem 0 0.6rem 0;
+            padding-bottom: 0.3rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* ── Calculate button ─────────────────────────────────── */
+        .btn-calcular {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            background: linear-gradient(135deg, var(--amber), #d97706);
+            color: #000;
+            border: none;
+            border-radius: var(--radius);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .btn-calcular:hover:not(:disabled) {
+            box-shadow: 0 0 20px rgba(245,158,11,0.3);
+            transform: translateY(-1px);
+        }
+        .btn-calcular:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <div class="header-icon">&#9874;</div>
+        <div>
+            <h1>Ferramentas de Dimensionamento</h1>
+            <div class="subtitle">Calculadoras Tecnicas</div>
+        </div>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <button class="btn-demo" onclick="window.location.href='/'" title="Voltar ao Memorial GD">&#8592; Voltar ao Memorial</button>
+    </div>
+</header>
+
+<main class="container">
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Section 1: Dimensionamento de Strings FV                   -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section" id="section-strings">
+        <div class="section-title">
+            <span class="section-badge">1</span>
+            Dimensionamento de Strings FV
+        </div>
+
+        <!-- Parametros do Modulo -->
+        <div class="sub-section-title">Parametros do Modulo</div>
+        <div class="grid grid-3">
+            <div class="field">
+                <label for="str_wp">Wp (W)</label>
+                <input type="number" id="str_wp" placeholder="550">
+            </div>
+            <div class="field">
+                <label for="str_voc">Voc (V)</label>
+                <input type="number" id="str_voc" step="0.01" placeholder="49.80">
+            </div>
+            <div class="field">
+                <label for="str_vmp">Vmp (V)</label>
+                <input type="number" id="str_vmp" step="0.01" placeholder="41.68">
+            </div>
+            <div class="field">
+                <label for="str_isc">Isc (A)</label>
+                <input type="number" id="str_isc" step="0.01" placeholder="13.89">
+            </div>
+            <div class="field">
+                <label for="str_imp">Imp (A)</label>
+                <input type="number" id="str_imp" step="0.01" placeholder="13.20">
+            </div>
+            <div class="field">
+                <label for="str_beta">BETA VOC (%/C)</label>
+                <input type="number" id="str_beta" step="0.01" placeholder="-0.29">
+            </div>
+            <div class="field">
+                <label for="str_alpha">ALPHA ISC (%/C)</label>
+                <input type="number" id="str_alpha" step="0.01" placeholder="0.048">
+            </div>
+        </div>
+
+        <!-- Parametros do Inversor -->
+        <div class="sub-section-title">Parametros do Inversor</div>
+        <div class="grid grid-3">
+            <div class="field">
+                <label for="str_num_mppts">N MPPTs</label>
+                <input type="number" id="str_num_mppts" placeholder="2">
+            </div>
+            <div class="field">
+                <label for="str_vmax">Vmax Entrada (V)</label>
+                <input type="number" id="str_vmax" placeholder="1100">
+            </div>
+            <div class="field">
+                <label for="str_vmppt_min">Vmppt Min (V)</label>
+                <input type="number" id="str_vmppt_min" placeholder="200">
+            </div>
+            <div class="field">
+                <label for="str_vmppt_max">Vmppt Max (V)</label>
+                <input type="number" id="str_vmppt_max" placeholder="850">
+            </div>
+            <div class="field">
+                <label for="str_isc_max">Isc Max MPPT (A)</label>
+                <input type="number" id="str_isc_max" step="0.01" placeholder="30">
+            </div>
+            <div class="field">
+                <label for="str_strings_max">Strings Max/MPPT</label>
+                <input type="number" id="str_strings_max" placeholder="4">
+            </div>
+        </div>
+
+        <!-- Buscar Temperatura Mínima Histórica -->
+        <div class="sub-section-title">Buscar T Min Histórica</div>
+        <div class="grid grid-3" style="align-items:flex-end;">
+            <div class="field">
+                <label for="str_cidade">Município</label>
+                <input type="text" id="str_cidade" placeholder="Ex: Campinas">
+            </div>
+            <div class="field">
+                <label for="str_uf">UF</label>
+                <select id="str_uf">
+                    <option value="">— selecione —</option>
+                    <option value="AC">AC — Acre</option>
+                    <option value="AL">AL — Alagoas</option>
+                    <option value="AP">AP — Amapá</option>
+                    <option value="AM">AM — Amazonas</option>
+                    <option value="BA">BA — Bahia</option>
+                    <option value="CE">CE — Ceará</option>
+                    <option value="DF">DF — Distrito Federal</option>
+                    <option value="ES">ES — Espírito Santo</option>
+                    <option value="GO">GO — Goiás</option>
+                    <option value="MA">MA — Maranhão</option>
+                    <option value="MT">MT — Mato Grosso</option>
+                    <option value="MS">MS — Mato Grosso do Sul</option>
+                    <option value="MG">MG — Minas Gerais</option>
+                    <option value="PA">PA — Pará</option>
+                    <option value="PB">PB — Paraíba</option>
+                    <option value="PR">PR — Paraná</option>
+                    <option value="PE">PE — Pernambuco</option>
+                    <option value="PI">PI — Piauí</option>
+                    <option value="RJ">RJ — Rio de Janeiro</option>
+                    <option value="RN">RN — Rio Grande do Norte</option>
+                    <option value="RS">RS — Rio Grande do Sul</option>
+                    <option value="RO">RO — Rondônia</option>
+                    <option value="RR">RR — Roraima</option>
+                    <option value="SC">SC — Santa Catarina</option>
+                    <option value="SP">SP — São Paulo</option>
+                    <option value="SE">SE — Sergipe</option>
+                    <option value="TO">TO — Tocantins</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>&nbsp;</label>
+                <button id="btn-buscar-tmin" onclick="buscarTemperatura()"
+                        style="width:100%; padding:0.5rem 1rem; background:var(--amber);
+                               color:#000; border:none; border-radius:4px; cursor:pointer;
+                               font-weight:600;">
+                    Buscar T Min
+                </button>
+            </div>
+        </div>
+        <div id="resultado-busca-tmin" style="display:none; margin:0.5rem 0 1rem 0; padding:0.75rem 1rem;
+             border-radius:6px; font-size:0.9rem; line-height:1.6;"></div>
+
+        <!-- Dados do Projeto -->
+        <div class="sub-section-title">Dados do Projeto</div>
+        <div class="grid grid-3">
+            <div class="field">
+                <label for="str_total_modulos">Total de Modulos</label>
+                <input type="number" id="str_total_modulos" placeholder="20">
+            </div>
+            <div class="field">
+                <label for="str_total_inversores">Total de Inversores</label>
+                <input type="number" id="str_total_inversores" placeholder="1">
+            </div>
+            <div class="field">
+                <label for="str_tmin">T MIN (C) — MANUAL</label>
+                <input type="number" id="str_tmin" step="0.1" placeholder="5.0">
+            </div>
+        </div>
+
+        <!-- Result area (hidden) -->
+        <div id="resultado-strings" class="section" style="display:none; margin-top:1rem; border-color: var(--amber);">
+            <div class="section-title"><span class="section-badge">R</span> Resultado — Strings</div>
+            <div id="resultado-strings-conteudo"></div>
+        </div>
+
+        <button class="btn-calcular" id="btn-calcular-strings" onclick="calcularStrings()">Calcular Strings</button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Section 2: Dimensionamento de Condutores CA (NBR 5410)     -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div class="section" id="section-condutores">
+        <div class="section-title">
+            <span class="section-badge">2</span>
+            Dimensionamento de Condutores CA (NBR 5410)
+        </div>
+
+        <!-- Parametros do Circuito -->
+        <div class="sub-section-title">Parametros do Circuito</div>
+        <div class="grid grid-3">
+            <div class="field">
+                <label for="cond_ib">Corrente de Projeto Ib (A)</label>
+                <input type="number" id="cond_ib" step="0.01" placeholder="30">
+            </div>
+            <div class="field">
+                <label for="cond_comprimento">Comprimento (m)</label>
+                <input type="number" id="cond_comprimento" step="0.1" placeholder="25">
+            </div>
+            <div class="field">
+                <label for="cond_tensao">Tensao Nominal (V)</label>
+                <select id="cond_tensao">
+                    <option value="127">127 V</option>
+                    <option value="220" selected>220 V</option>
+                    <option value="380">380 V</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="cond_sistema">Sistema</label>
+                <select id="cond_sistema">
+                    <option value="mono">Monofasico (2F)</option>
+                    <option value="tri3">Trifasico (3F)</option>
+                    <option value="tri4">Trifasico (4F)</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="cond_fp">Fator de Potencia</label>
+                <input type="number" id="cond_fp" step="0.01" placeholder="0.92" value="0.92">
+            </div>
+            <div class="field">
+                <label for="cond_dv_max">Delta V Max (%)</label>
+                <input type="number" id="cond_dv_max" step="0.1" placeholder="4.0" value="4.0">
+            </div>
+        </div>
+
+        <!-- Parametros de Instalacao -->
+        <div class="sub-section-title">Parametros de Instalacao</div>
+        <div class="grid grid-3">
+            <div class="field">
+                <label for="cond_metodo">Metodo de Instalacao</label>
+                <select id="cond_metodo">
+                    <option value="A1">A1 — Embutido em parede isolante</option>
+                    <option value="A2">A2 — Cabos embutido em parede isolante</option>
+                    <option value="B1">B1 — Eletroduto aparente (condutores)</option>
+                    <option value="B2">B2 — Eletroduto aparente (cabos)</option>
+                    <option value="C">C — Fixado na superficie</option>
+                    <option value="D1">D1 — Eletroduto enterrado</option>
+                    <option value="E">E — Eletrocalha perfurada</option>
+                    <option value="F">F — Unipolares ao ar</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="cond_temp">Temperatura Ambiente (C)</label>
+                <input type="number" id="cond_temp" placeholder="30" value="30">
+            </div>
+            <div class="field">
+                <label for="cond_circuitos">Circuitos Agrupados</label>
+                <input type="number" id="cond_circuitos" placeholder="1" value="1" min="1">
+            </div>
+        </div>
+
+        <!-- Result area (hidden) -->
+        <div id="resultado-condutores" class="section" style="display:none; margin-top:1rem; border-color: var(--amber);">
+            <div class="section-title"><span class="section-badge">R</span> Resultado — Condutores CA</div>
+            <div id="resultado-condutores-conteudo"></div>
+        </div>
+
+        <button class="btn-calcular" id="btn-calcular-condutores" onclick="calcularCondutores()">Calcular Condutores</button>
+    </div>
+
+</main>
+
+<script>
+    // ── NBR 5410 Tables ────────────────────────────────────────────
+
+    // Bitolas normalizadas (mm2)
+    const BITOLAS_NBR = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50, 70, 95, 120];
+
+    // Capacidade de corrente Iz0 (A) — Cobre PVC 70C, 30C ambiente
+    // Chave: metodo, valor: {2: [...], 3: [...]} para 2 e 3 condutores carregados
+    const IZ0_TABLE = {
+        A1: { 2: [13,17.5,23,29,40,54,70,86,104,131,157,181], 3: [11.5,15,20,26,36,48,63,77,93,118,142,162] },
+        A2: { 2: [13,17.5,23,29,40,54,70,86,104,131,157,181], 3: [11.5,15,20,26,36,48,63,77,93,118,142,162] },
+        B1: { 2: [15.5,21,28,36,50,68,89,110,134,171,207,239], 3: [13.5,18,24,31,43,57,75,92,112,142,172,199] },
+        B2: { 2: [15.5,21,28,36,50,68,89,110,134,171,207,239], 3: [13.5,18,24,31,43,57,75,92,112,142,172,199] },
+        C:  { 2: [17.5,24,32,41,57,76,101,125,151,192,232,269], 3: [15.5,21,28,36,50,68,89,110,134,171,207,239] },
+        D1: { 2: [17.5,24,32,41,57,76,101,125,151,192,232,269], 3: [15.5,21,28,36,50,68,89,110,134,171,207,239] },
+        E:  { 2: [19,26,35,46,63,85,112,138,168,213,258,299], 3: [17,23,31,40,57,76,96,119,144,184,223,259] },
+        F:  { 2: [22,30,40,51,70,94,119,148,180,232,282,328], 3: [20,27,37,48,66,88,117,144,175,222,269,312] }
+    };
+
+    // Fatores de correcao de temperatura — PVC 70C (base 30C)
+    const FATOR_TEMP = {
+        10: 1.22, 15: 1.17, 20: 1.12, 25: 1.06, 30: 1.00,
+        35: 0.94, 40: 0.87, 45: 0.79, 50: 0.71, 55: 0.61, 60: 0.50
+    };
+
+    // Fatores de agrupamento (NBR 5410 Tabela 43)
+    const FATOR_AGRUP = {
+        1: 1.00, 2: 0.80, 3: 0.70, 4: 0.65, 5: 0.60, 6: 0.57,
+        7: 0.52, 8: 0.52, 9: 0.50, 10: 0.45, 11: 0.45, 12: 0.45,
+        13: 0.41, 14: 0.41, 15: 0.41, 16: 0.41,
+        17: 0.38, 18: 0.38, 19: 0.38, 20: 0.38
+    };
+    // For >20 circuits, use 0.35
+
+    // Resistividade do cobre a 70C (PVC) em ohm.mm2/m
+    const RHO_COBRE_70 = 0.0237;
+
+    // ── Task 1: Validação de entradas ──────────────────────────────
+
+    const CAMPOS_STRINGS = [
+        { id: 'str_wp',          label: 'Wp (W)',               permitirNegativo: false },
+        { id: 'str_voc',         label: 'Voc (V)',              permitirNegativo: false },
+        { id: 'str_vmp',         label: 'Vmp (V)',              permitirNegativo: false },
+        { id: 'str_isc',         label: 'Isc (A)',              permitirNegativo: false },
+        { id: 'str_imp',         label: 'Imp (A)',              permitirNegativo: false },
+        { id: 'str_beta',        label: 'Beta Voc (%/C)',       permitirNegativo: true  },
+        { id: 'str_alpha',       label: 'Alpha Isc (%/C)',      permitirNegativo: false },
+        { id: 'str_num_mppts',   label: 'N MPPTs',              permitirNegativo: false },
+        { id: 'str_vmax',        label: 'Vmax Entrada (V)',     permitirNegativo: false },
+        { id: 'str_vmppt_min',   label: 'Vmppt Min (V)',        permitirNegativo: false },
+        { id: 'str_vmppt_max',   label: 'Vmppt Max (V)',        permitirNegativo: false },
+        { id: 'str_isc_max',     label: 'Isc Max MPPT (A)',     permitirNegativo: false },
+        { id: 'str_strings_max', label: 'Strings Max/MPPT',    permitirNegativo: false },
+        { id: 'str_tmin',        label: 'T Min (C)',            permitirNegativo: true, permitirZero: true }
+    ];
+
+    function validarStrings() {
+        const erros = [];
+        const avisos = [];
+
+        for (const campo of CAMPOS_STRINGS) {
+            const el = document.getElementById(campo.id);
+            const raw = el ? el.value.trim() : '';
+
+            if (raw === '' || raw === null) {
+                erros.push('Campo obrigatório não preenchido: ' + campo.label);
+                continue;
+            }
+
+            const val = parseFloat(raw);
+            if (isNaN(val)) {
+                erros.push('Valor inválido em: ' + campo.label);
+                continue;
+            }
+
+            // beta: deve ser não-nulo (qualquer valor exceto 0 é aceitável em sinal)
+            if (campo.id === 'str_beta' && val === 0) {
+                erros.push('Parâmetro ' + campo.label + ' não pode ser zero');
+                continue;
+            }
+
+            // tmin: pode ser negativo ou zero — apenas não pode estar vazio (já verificado acima)
+            if (campo.id === 'str_tmin') continue;
+
+            // demais campos: devem ser positivos (> 0)
+            if (!campo.permitirNegativo && val <= 0) {
+                erros.push('Parâmetro ' + campo.label + ' deve ser positivo');
+            }
+        }
+
+        // Validações cruzadas (só se campos individuais OK)
+        if (erros.length === 0) {
+            const Voc = parseFloat(document.getElementById('str_voc').value);
+            const Vmp = parseFloat(document.getElementById('str_vmp').value);
+            const Vmppt_min = parseFloat(document.getElementById('str_vmppt_min').value);
+            const Vmppt_max = parseFloat(document.getElementById('str_vmppt_max').value);
+            const beta = parseFloat(document.getElementById('str_beta').value);
+
+            if (Vmp >= Voc) {
+                erros.push('Vmp deve ser menor que Voc (Vmp >= Voc indica datasheet incorreto)');
+            }
+            if (Vmppt_min >= Vmppt_max) {
+                erros.push('Vmppt_min deve ser menor que Vmppt_max');
+            }
+            if (beta > 0) {
+                avisos.push('ATENÇÃO: beta positivo é incomum para módulos de silício cristalino. Verifique o datasheet — beta deve ser negativo (ex: -0.29 %/°C). O cálculo continuará com o valor informado.');
+            }
+        }
+
+        return { ok: erros.length === 0, erros, avisos };
+    }
+
+    function _atualizarBotaoStrings() {
+        const btn = document.getElementById('btn-calcular-strings');
+        if (!btn) return;
+        const resultado = validarStrings();
+        btn.disabled = !resultado.ok;
+    }
+
+    // ── Task 2: Motor de cálculo ───────────────────────────────────
+
+    function calcularStrings() {
+        const validacao = validarStrings();
+
+        if (!validacao.ok) {
+            document.getElementById('resultado-strings-conteudo').innerHTML =
+                '<div style="color:var(--red); padding:0.5rem;">' +
+                validacao.erros.map(function(e) { return '<div>&#9940; ' + e + '</div>'; }).join('') +
+                '</div>';
+            document.getElementById('resultado-strings').style.display = 'block';
+            return;
+        }
+
+        // Passo 2 — Ler e converter inputs
+        const Voc   = parseFloat(document.getElementById('str_voc').value);
+        const Vmp   = parseFloat(document.getElementById('str_vmp').value);
+        const Isc   = parseFloat(document.getElementById('str_isc').value);
+        const beta  = parseFloat(document.getElementById('str_beta').value);   // %/°C, negativo
+        const alpha = parseFloat(document.getElementById('str_alpha').value);  // %/°C, positivo
+        const Vmax_abs     = parseFloat(document.getElementById('str_vmax').value);
+        const Vmppt_min    = parseFloat(document.getElementById('str_vmppt_min').value);
+        const Vmppt_max    = parseFloat(document.getElementById('str_vmppt_max').value);
+        const Isc_max_mppt = parseFloat(document.getElementById('str_isc_max').value);
+        const T_min = parseFloat(document.getElementById('str_tmin').value);
+        const T_max = 70;  // fixo — temperatura máxima do módulo em condições de pior caso
+
+        // Passo 3 — Correção de temperatura
+        const Voc_Tmin = Voc * (1 + (beta / 100) * (T_min - 25));
+        const Vmp_Tmin = Vmp * (1 + (beta / 100) * (T_min - 25));
+        const Vmp_Tmax = Vmp * (1 + (beta / 100) * (T_max - 25));
+        const Isc_Tmax = Isc * (1 + (alpha / 100) * (T_max - 25));
+
+        // Passo 4 — Configuração de strings
+        const N_max_serie  = Math.floor(Vmax_abs / Voc_Tmin);
+        const N_min_serie  = Math.ceil(Vmppt_min / Vmp_Tmax);
+        const N_opt_serie  = Math.floor(Vmppt_max / Vmp_Tmin);
+        const N_serie      = Math.min(N_max_serie, N_opt_serie);
+
+        const N_max_paralelo = Math.floor(Isc_max_mppt / Isc_Tmax);
+        const N_paralelo = N_max_paralelo;
+
+        // Passo 5 — Verificações MPPT triplas independentes
+        const check1_val = Vmp_Tmax * N_serie;
+        const check1_ok  = check1_val >= Vmppt_min;
+
+        const check2_val = Vmp_Tmin * N_serie;
+        const check2_ok  = check2_val <= Vmppt_max;
+
+        const check3_val = Voc_Tmin * N_serie;
+        const check3_ok  = check3_val <= Vmax_abs;
+
+        // Passo 6 — Correntes de saída
+        const Isc_por_string = Isc_Tmax;
+        const Isc_total      = N_paralelo * Isc_Tmax;
+
+        // Passo 7 — Renderizar resultado
+        renderizarResultadoStrings({
+            T_min, T_max,
+            Voc_Tmin, Vmp_Tmin, Vmp_Tmax, Isc_Tmax,
+            N_serie, N_min_serie, N_max_serie, N_opt_serie,
+            N_paralelo, N_max_paralelo,
+            check1_ok, check1_val, Vmppt_min,
+            check2_ok, check2_val, Vmppt_max,
+            check3_ok, check3_val, Vmax_abs,
+            Isc_por_string, Isc_total,
+            avisos: validarStrings().avisos
+        });
+    }
+
+    // ── Task 3: Renderização do resultado ─────────────────────────
+
+    function renderizarResultadoStrings(d) {
+        const badgeOk   = 'background:var(--green-soft);color:var(--green);border:1px solid var(--green);border-radius:4px;padding:2px 8px;font-size:0.75rem;font-weight:700;';
+        const badgeNok  = 'background:var(--red-soft);color:var(--red);border:1px solid var(--red);border-radius:4px;padding:2px 8px;font-size:0.75rem;font-weight:700;';
+        const cardStyle = 'background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;';
+        const labelStyle = 'font-size:0.7rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.15rem;';
+        const valStyle  = 'font-size:1rem;font-weight:600;color:var(--text);';
+        const gridStyle = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.6rem;';
+
+        let html = '';
+
+        // Bloco 1 — Avisos
+        if (d.avisos && d.avisos.length > 0) {
+            html += '<div style="background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--radius);padding:0.75rem;margin-bottom:0.75rem;color:var(--amber);font-size:0.85rem;">';
+            d.avisos.forEach(function(av) { html += '<div>&#9888; ' + av + '</div>'; });
+            html += '</div>';
+        }
+
+        // Bloco 2 — Temperaturas corrigidas
+        html += '<div style="' + cardStyle + '">';
+        html += '<div style="font-family:\'Outfit\',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;">Valores Corrigidos por Temperatura</div>';
+        html += '<div style="' + gridStyle + '">';
+        html += '<div><span style="' + labelStyle + '">Voc @ T_min (' + d.T_min + '°C)</span><span style="' + valStyle + '">' + d.Voc_Tmin.toFixed(2) + ' V</span></div>';
+        html += '<div><span style="' + labelStyle + '">Vmp @ T_min (' + d.T_min + '°C)</span><span style="' + valStyle + '">' + d.Vmp_Tmin.toFixed(2) + ' V</span></div>';
+        html += '<div><span style="' + labelStyle + '">Vmp @ T_max (' + d.T_max + '°C)</span><span style="' + valStyle + '">' + d.Vmp_Tmax.toFixed(2) + ' V</span></div>';
+        html += '<div><span style="' + labelStyle + '">Isc @ T_max (' + d.T_max + '°C)</span><span style="' + valStyle + '">' + d.Isc_Tmax.toFixed(2) + ' A</span></div>';
+        html += '</div></div>';
+
+        // Bloco 3 — Configuração recomendada
+        html += '<div style="' + cardStyle + 'border-color:var(--amber);">';
+        html += '<div style="font-family:\'Outfit\',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;">Configuração Recomendada por MPPT</div>';
+        html += '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.6rem;">';
+        html += '<div style="font-size:1.5rem;font-weight:700;color:var(--amber);">N série: ' + d.N_serie + ' &times; N paralelo: ' + d.N_paralelo + '</div>';
+        html += '</div>';
+        html += '<div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:0.78rem;color:var(--text-muted);">';
+        html += '<span>N máx. série: <strong style="color:var(--text);">' + d.N_max_serie + '</strong></span>';
+        html += '<span>N mín. série: <strong style="color:var(--text);">' + d.N_min_serie + '</strong></span>';
+        html += '<span>N ót. série: <strong style="color:var(--text);">' + d.N_opt_serie + '</strong></span>';
+        html += '<span>N máx. paralelo: <strong style="color:var(--text);">' + d.N_max_paralelo + '</strong></span>';
+        html += '</div></div>';
+
+        // Bloco 4 — Verificações MPPT
+        html += '<div style="' + cardStyle + '">';
+        html += '<div style="font-family:\'Outfit\',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;">Verificações MPPT (NBR/STR-05)</div>';
+
+        // Critério 1
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid var(--border);">';
+        html += '<div><span style="font-size:0.85rem;color:var(--text);">Tensão mínima MPPT</span><br><span style="font-size:0.75rem;color:var(--text-muted);">Vmp_Tmax × N_série ≥ Vmppt_min: ' + d.check1_val.toFixed(1) + ' V ≥ ' + d.Vmppt_min + ' V</span></div>';
+        html += '<span style="' + (d.check1_ok ? badgeOk : badgeNok) + '">' + (d.check1_ok ? 'APROVADO' : 'REPROVADO') + '</span>';
+        html += '</div>';
+
+        // Critério 2
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid var(--border);">';
+        html += '<div><span style="font-size:0.85rem;color:var(--text);">Tensão máxima MPPT</span><br><span style="font-size:0.75rem;color:var(--text-muted);">Vmp_Tmin × N_série ≤ Vmppt_max: ' + d.check2_val.toFixed(1) + ' V ≤ ' + d.Vmppt_max + ' V</span></div>';
+        html += '<span style="' + (d.check2_ok ? badgeOk : badgeNok) + '">' + (d.check2_ok ? 'APROVADO' : 'REPROVADO') + '</span>';
+        html += '</div>';
+
+        // Critério 3
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;">';
+        html += '<div><span style="font-size:0.85rem;color:var(--text);">Tensão máxima absoluta</span><br><span style="font-size:0.75rem;color:var(--text-muted);">Voc_Tmin × N_série ≤ Vmax_abs: ' + d.check3_val.toFixed(1) + ' V ≤ ' + d.Vmax_abs + ' V</span></div>';
+        html += '<span style="' + (d.check3_ok ? badgeOk : badgeNok) + '">' + (d.check3_ok ? 'APROVADO' : 'REPROVADO') + '</span>';
+        html += '</div>';
+
+        html += '</div>';
+
+        // Bloco 5 — Correntes de proteção
+        html += '<div style="' + cardStyle + '">';
+        html += '<div style="font-family:\'Outfit\',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;">Correntes de Proteção (STR-06)</div>';
+        html += '<div style="' + gridStyle + '">';
+        html += '<div><span style="' + labelStyle + '">Isc por string (Isc_Tmax)</span><span style="' + valStyle + '">' + d.Isc_por_string.toFixed(2) + ' A</span></div>';
+        html += '<div><span style="' + labelStyle + '">Isc total (' + d.N_paralelo + ' strings em paralelo)</span><span style="' + valStyle + '">' + d.Isc_total.toFixed(2) + ' A</span></div>';
+        html += '</div>';
+        html += '<div style="font-size:0.73rem;color:var(--text-muted);margin-top:0.5rem;">Use Isc total para dimensionar proteções (disjuntor/fusível de string).</div>';
+        html += '</div>';
+
+        document.getElementById('resultado-strings-conteudo').innerHTML = html;
+        document.getElementById('resultado-strings').style.display = 'block';
+        document.getElementById('resultado-strings').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // ── Listeners em tempo real ────────────────────────────────────
+    ['str_wp','str_voc','str_vmp','str_isc','str_imp','str_beta','str_alpha',
+     'str_num_mppts','str_vmax','str_vmppt_min','str_vmppt_max','str_isc_max',
+     'str_strings_max','str_tmin'].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('input', _atualizarBotaoStrings);
+    });
+
+    // ── Busca de Temperatura Mínima Histórica ─────────────────────
+    function buscarTemperatura() {
+        var cidade = document.getElementById('str_cidade').value.trim();
+        var uf = document.getElementById('str_uf').value;
+        var btn = document.getElementById('btn-buscar-tmin');
+        var resultado = document.getElementById('resultado-busca-tmin');
+
+        if (!cidade || !uf) {
+            resultado.style.display = 'block';
+            resultado.style.background = '#fff3cd';
+            resultado.style.border = '1px solid #ffc107';
+            resultado.style.color = '#856404';
+            resultado.innerHTML = 'Preencha o nome do município e selecione a UF antes de buscar.';
+            return;
+        }
+
+        // Estado de loading
+        btn.disabled = true;
+        btn.textContent = 'Buscando...';
+        resultado.style.display = 'none';
+
+        fetch('/api/temperatura?cidade=' + encodeURIComponent(cidade) + '&uf=' + encodeURIComponent(uf))
+            .then(function(resp) { return resp.json().then(function(data) { return { ok: resp.ok, data: data }; }); })
+            .then(function(res) {
+                btn.disabled = false;
+                btn.textContent = 'Buscar T Min';
+
+                if (!res.ok) {
+                    // Erro da API — exibir mensagem; campo manual permanece usável
+                    resultado.style.display = 'block';
+                    resultado.style.background = '#f8d7da';
+                    resultado.style.border = '1px solid #f5c6cb';
+                    resultado.style.color = '#721c24';
+                    resultado.innerHTML = '<strong>Erro:</strong> ' + (res.data.error || 'Falha desconhecida') +
+                        '<br><small>Use o campo T MIN (C) — MANUAL abaixo para informar o valor.</small>';
+                    return;
+                }
+
+                var d = res.data;
+                resultado.style.display = 'block';
+                resultado.style.background = '#d4edda';
+                resultado.style.border = '1px solid #c3e6cb';
+                resultado.style.color = '#155724';
+                resultado.innerHTML =
+                    '<strong>Cidade resolvida:</strong> ' + d.cidade_resolvida + ' — ' + d.estado + '<br>' +
+                    '<strong>Coordenadas:</strong> ' + d.latitude.toFixed(4) + ', ' + d.longitude.toFixed(4) + '<br>' +
+                    '<strong>T min histórica (P1%):</strong> ' + d.t_min_p1 + ' °C' +
+                    '&nbsp;&nbsp;<button onclick="document.getElementById(\'str_tmin\').value=' + d.t_min_p1 + '; this.parentElement.parentElement.style.borderColor=\'var(--amber)\'"' +
+                    ' style="padding:0.2rem 0.75rem; background:var(--amber); color:#000; border:none; border-radius:4px; cursor:pointer; font-weight:600; font-size:0.85rem;">' +
+                    'Usar este valor</button>';
+            })
+            .catch(function() {
+                btn.disabled = false;
+                btn.textContent = 'Buscar T Min';
+                resultado.style.display = 'block';
+                resultado.style.background = '#f8d7da';
+                resultado.style.border = '1px solid #f5c6cb';
+                resultado.style.color = '#721c24';
+                resultado.innerHTML = '<strong>Erro de rede:</strong> Não foi possível conectar ao servidor.' +
+                    '<br><small>Use o campo T MIN (C) — MANUAL abaixo para informar o valor.</small>';
+            });
+    }
+
+    // ── Condutores (stub — Fase 5) ─────────────────────────────────
+    function calcularCondutores() { alert('Calculo de condutores sera implementado na Fase 5.'); }
+</script>
+
+</body>
+</html>

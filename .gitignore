@@ -1,0 +1,88 @@
+# ================================================================
+# Memorial GD Solar — .gitignore
+# ================================================================
+
+# === DADOS DE CLIENTES — NUNCA COMMITAR ===
+*.pdf
+*.PDF
+*.xlsx
+!MEMORIAL_GD_v4-22022022\ \(54\).xlsx
+pipeline/api/output/
+data/output/
+_temp_*.xlsx
+*_UC_*.pdf
+*_UC_*.xlsx
+*_pipeline.pdf
+*_pipeline.xlsx
+
+# === CHAVES SSH E TERRAFORM ===
+terraform/
+*.pem
+*.key
+*.ppk
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# === CONFIGURACAO LOCAL ===
+.env
+.env.*
+*.env
+
+# === PYTHON ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# === DEBUG E SCRIPTS DE DESENVOLVIMENTO ===
+debug*.py
+check_*.py
+pesquisar_*.py
+test_*.py
+testar_*.py
+test_*.xlsx
+frontend_preview.html
+ATUALIZAR*.zip
+atualizar_*.zip
+TESTE*.pdf
+TESTE*.xlsx
+TEST_*.pdf
+*.docx
+pipeline_output.*
+
+# === DADOS DE PROJETOS SALVOS (dados de clientes) ===
+pipeline/api/projetos_salvos/
+# Arquivos temporarios sem extensao (LibreOffice, editores)
+ziVuNVKm
+ziy5vndM
+
+# === IDE, OS, DOCKER, MISC ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.orig
+INICIAR SERVIDOR.bat
+MEMORIAL_GD_v4-22022022 (54) EXPLODIDO
+.planning/

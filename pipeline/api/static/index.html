@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorial GD — Gerador de Documentos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0c0f14;
+            --bg-card: #151921;
+            --bg-card-hover: #1a1f2b;
+            --bg-input: #1c2230;
+            --border: #2a3040;
+            --border-focus: #f59e0b;
+            --text: #e8eaed;
+            --text-muted: #7c8496;
+            --text-dim: #505868;
+            --amber: #f59e0b;
+            --amber-soft: rgba(245,158,11,0.12);
+            --amber-glow: rgba(245,158,11,0.25);
+            --green: #22c55e;
+            --green-soft: rgba(34,197,94,0.12);
+            --red: #ef4444;
+            --red-soft: rgba(239,68,68,0.12);
+            --blue: #3b82f6;
+            --blue-soft: rgba(59,130,246,0.1);
+            --radius: 10px;
+            --radius-lg: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Subtle grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(ellipse 600px 400px at 20% 10%, rgba(245,158,11,0.04), transparent),
+                radial-gradient(ellipse 500px 350px at 80% 80%, rgba(59,130,246,0.03), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Header ───────────────────────────────────────────── */
+        header {
+            background: rgba(21,25,33,0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(245,158,11,0.1);
+            padding: 0.9rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 0.85rem; }
+
+        .header-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--amber), #d97706);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 0 20px rgba(245,158,11,0.2);
+        }
+
+        header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: var(--text);
+        }
+
+        header .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .btn-demo {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.2);
+            color: var(--amber);
+            padding: 0.4rem 0.9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .btn-demo:hover {
+            background: rgba(245,158,11,0.15);
+            border-color: rgba(245,158,11,0.4);
+            box-shadow: 0 0 12px rgba(245,158,11,0.1);
+        }
+
+        .btn-salvar {
+            background: rgba(34,197,94,0.08);
+            border: 1px solid rgba(34,197,94,0.2);
+            color: var(--green);
+            padding: 0.4rem 0.9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .btn-salvar:hover {
+            background: rgba(34,197,94,0.15);
+            border-color: rgba(34,197,94,0.4);
+            box-shadow: 0 0 12px rgba(34,197,94,0.1);
+        }
+
+        .btn-carregar {
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.2);
+            color: var(--blue);
+            padding: 0.4rem 0.9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .btn-carregar:hover {
+            background: rgba(59,130,246,0.15);
+            border-color: rgba(59,130,246,0.4);
+            box-shadow: 0 0 12px rgba(59,130,246,0.1);
+        }
+
+        /* ── Modal de projetos ────────────────────────────────────── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            min-width: 320px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.1rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0 0.2rem;
+        }
+        .modal-close:hover { color: var(--text); }
+        .modal-projeto-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+        .modal-projeto-item:hover { background: var(--bg-card-hover); }
+        .modal-projeto-icon { color: var(--blue); font-size: 1rem; }
+        .modal-empty {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+        .modal-lista { max-height: 320px; overflow-y: auto; }
+
+        /* ── Container ────────────────────────────────────────── */
+        .container {
+            max-width: 960px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Section cards ────────────────────────────────────── */
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: border-color 0.3s;
+            animation: fadeInUp 0.5s ease-out both;
+        }
+
+        .section:hover {
+            border-color: rgba(245,158,11,0.15);
+        }
+
+        .section:nth-child(1) { animation-delay: 0.05s; }
+        .section:nth-child(2) { animation-delay: 0.1s; }
+        .section:nth-child(3) { animation-delay: 0.15s; }
+        .section:nth-child(4) { animation-delay: 0.2s; }
+        .section:nth-child(5) { animation-delay: 0.25s; }
+        .section:nth-child(6) { animation-delay: 0.3s; }
+        .section:nth-child(7) { animation-delay: 0.35s; }
+        .section:nth-child(8) { animation-delay: 0.4s; }
+        .section:nth-child(9) { animation-delay: 0.45s; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1.1rem;
+            letter-spacing: -0.01em;
+        }
+
+        .section-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            background: var(--amber-soft);
+            color: var(--amber);
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .section-hint {
+            font-size: 0.73rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: auto;
+        }
+
+        /* ── Grid ─────────────────────────────────────────────── */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.75rem;
+        }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+        .field { display: flex; flex-direction: column; }
+        .field.span-2 { grid-column: span 2; }
+        .field.span-3 { grid-column: span 3; }
+
+        /* ── Labels & Inputs ──────────────────────────────────── */
+        label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        input, select {
+            padding: 0.55rem 0.7rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.88rem;
+            color: var(--text);
+            background: var(--bg-input);
+            transition: all 0.2s;
+        }
+
+        input::placeholder { color: var(--text-dim); }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--amber);
+            box-shadow: 0 0 0 3px var(--amber-soft), 0 0 12px rgba(245,158,11,0.08);
+        }
+
+        input.invalid {
+            border-color: var(--red);
+            box-shadow: 0 0 0 3px var(--red-soft);
+        }
+
+        select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237c8496' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.7rem center;
+            padding-right: 2rem;
+        }
+
+        select option {
+            background: var(--bg-card);
+            color: var(--text);
+        }
+
+        input[type="number"] { -moz-appearance: textfield; }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        /* ── Equipment tables ─────────────────────────────────── */
+        .equip-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+
+        .equip-table th {
+            background: rgba(245,158,11,0.04);
+            padding: 0.5rem 0.5rem;
+            text-align: left;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .equip-table td {
+            padding: 0.3rem 0.2rem;
+        }
+
+        .equip-table input, .equip-table select {
+            width: 100%;
+            padding: 0.4rem 0.5rem;
+            font-size: 0.84rem;
+        }
+
+        .btn-add {
+            background: none;
+            border: 1px dashed var(--border);
+            color: var(--amber);
+            padding: 0.45rem 0.9rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 0.6rem;
+            transition: all 0.2s;
+        }
+        .btn-add:hover {
+            border-color: var(--amber);
+            background: var(--amber-soft);
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: var(--red);
+            cursor: pointer;
+            font-size: 1.1rem;
+            padding: 0.2rem 0.4rem;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .btn-remove:hover { opacity: 1; }
+
+        /* ── Generate button ──────────────────────────────────── */
+        .actions {
+            text-align: center;
+            padding: 1.5rem 0 2rem;
+        }
+
+        .btn-gerar {
+            position: relative;
+            background: linear-gradient(135deg, var(--amber), #d97706);
+            color: #0c0f14;
+            border: none;
+            padding: 0.9rem 3rem;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(245,158,11,0.3);
+            letter-spacing: 0.02em;
+            overflow: hidden;
+        }
+
+        .btn-gerar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-gerar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(245,158,11,0.4);
+        }
+
+        .btn-gerar:hover::before {
+            left: 100%;
+        }
+
+        .btn-gerar:active { transform: translateY(0); }
+        .btn-gerar:disabled {
+            opacity: 0.5;
+            cursor: wait;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ── Status / result ──────────────────────────────────── */
+        .status {
+            text-align: center;
+            padding: 1.25rem;
+            margin: 1rem 0;
+            border-radius: var(--radius-lg);
+            display: none;
+            animation: fadeInUp 0.3s ease-out;
+        }
+
+        .status.loading {
+            display: block;
+            background: var(--blue-soft);
+            color: var(--blue);
+            border: 1px solid rgba(59,130,246,0.2);
+        }
+        .status.success {
+            display: block;
+            background: var(--green-soft);
+            color: var(--green);
+            border: 1px solid rgba(34,197,94,0.2);
+        }
+        .status.error {
+            display: block;
+            background: var(--red-soft);
+            color: var(--red);
+            border: 1px solid rgba(239,68,68,0.2);
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 18px; height: 18px;
+            border: 2.5px solid rgba(59,130,246,0.2);
+            border-top-color: var(--blue);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 0.5rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .timer-text {
+            font-size: 0.78rem;
+            opacity: 0.7;
+            margin-top: 0.4rem;
+        }
+
+        .download-links {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .download-links a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.88rem;
+            transition: all 0.15s;
+        }
+        .download-links a:hover { transform: translateY(-1px); }
+
+        .dl-xlsx {
+            background: var(--green);
+            color: #0c0f14;
+        }
+        .dl-pdf {
+            background: var(--red);
+            color: white;
+        }
+        .dl-proc {
+            background: var(--amber);
+            color: #0c0f14;
+        }
+
+        .btn-nova {
+            margin-top: 0.8rem;
+            background: none;
+            border: 1px solid var(--green);
+            color: var(--green);
+            padding: 0.45rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.83rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-nova:hover { background: var(--green-soft); }
+
+        .error-list {
+            text-align: left;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        .error-list li { margin: 0.2rem 0; font-size: 0.86rem; }
+
+        /* ── Footer ───────────────────────────────────────────── */
+        footer {
+            text-align: center;
+            padding: 1.5rem 1rem 2rem;
+            color: var(--text-dim);
+            font-size: 0.72rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        footer a {
+            color: var(--amber);
+            text-decoration: none;
+        }
+
+        /* ── Responsive ───────────────────────────────────────── */
+        @media (max-width: 640px) {
+            .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+            .field.span-2, .field.span-3 { grid-column: span 1; }
+            header { flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 0.8rem 1rem; }
+            .container { padding: 0 0.75rem; }
+            .section { padding: 1.1rem; }
+            .btn-gerar { width: 100%; }
+        }
+
+        /* ── Toggle UCs Beneficiárias ─────────────────────────── */
+        .toggle-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        .toggle-label input[type="radio"] {
+            margin: 0;
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--amber);
+        }
+
+        #ucs-container {
+            transition: all 0.3s ease;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <div class="header-icon">⚡</div>
+        <div>
+            <h1>Memorial GD</h1>
+            <div class="subtitle">Gerador de Documentos — Energisa</div>
+        </div>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <button class="btn-demo" onclick="window.location.href='/static/ferramentas.html'" title="Ferramentas de Dimensionamento">&#9874; Ferramentas</button>
+        <button class="btn-demo" onclick="preencherDados()">&#9881; Dados de Exemplo</button>
+        <button class="btn-salvar" onclick="abrirModalSalvar()">&#128190; Salvar Projeto</button>
+        <button class="btn-carregar" onclick="abrirModalProjetos()">&#128193; Carregar Projeto</button>
+    </div>
+</header>
+
+<!-- Modal: Salvar Projeto -->
+<div id="modal-salvar" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalSalvar()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span>&#128190; Salvar Projeto</span>
+            <button class="modal-close" onclick="fecharModalSalvar()" title="Fechar">&times;</button>
+        </div>
+        <div style="margin-bottom: 1.2rem;">
+            <label style="display:block; margin-bottom:0.4rem; font-size:0.8rem; font-weight:600; color:var(--text); text-transform:uppercase;">Sobrescrever Existente:</label>
+            <select id="select_salvar_existente" class="field" style="width:100%; margin-bottom: 0.8rem;">
+                <option value="">-- Selecionar projeto existente --</option>
+            </select>
+            <button class="btn-demo" style="width:100%; border:1px solid var(--border);" onclick="submeterSalvar(true)">Sobrescrever Selecionado</button>
+        </div>
+        <div style="text-align:center; color:var(--text-muted); font-size:0.8rem; margin:1rem 0;">— OU —</div>
+        <div>
+            <label style="display:block; margin-bottom:0.4rem; font-size:0.8rem; font-weight:600; color:var(--text); text-transform:uppercase;">Salvar Como Novo:</label>
+            <input type="text" id="input_novo_projeto" placeholder="Nome do novo projeto" style="width:100%; margin-bottom: 0.8rem;">
+            <button class="btn-gerar" style="width:100%; padding: 0.7rem; font-size: 0.95rem;" onclick="submeterSalvar(false)">Salvar Como Novo Arquivo</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Carregar Projeto -->
+<div id="modal-projetos" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalProjetos()">
+    <div class="modal-box">
+        <div class="modal-header">
+            <span>&#128193; Carregar Projeto</span>
+            <button class="modal-close" onclick="fecharModalProjetos()" title="Fechar">&times;</button>
+        </div>
+        <div id="modal-lista-projetos" class="modal-lista">
+            <div class="modal-empty">Carregando...</div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- 1. IDENTIFICAÇÃO -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-badge">1</span>
+            Identificação da Unidade Consumidora
+        </div>
+        <div class="grid grid-4">
+            <div class="field"><label>Código UC *</label><input id="codigo_uc" required></div>
+            <div class="field span-2"><label>Titular *</label><input id="titular" required></div>
+            <div class="field"><label>CPF / CNPJ *</label><input id="cpf_cnpj" placeholder="somente dígitos" required></div>
+        </div>
+        <div class="grid grid-4" style="margin-top:0.75rem">
+            <div class="field"><label>Classe *</label>
+                <select id="classe">
+                    <option>RESIDENCIAL</option><option>COMERCIAL</option>
+                    <option>INDUSTRIAL</option><option>RURAL</option>
+                    <option>PODER PÚBLICO</option><option>SERVIÇO PÚBLICO</option>
+                </select>
+            </div>
+            <div class="field span-2"><label>Logradouro *</label><input id="logradouro" required></div>
+            <div class="field"><label>Número</label><input id="numero" value="0"></div>
+        </div>
+        <div class="grid grid-4" style="margin-top:0.75rem">
+            <div class="field"><label>Bairro *</label><input id="bairro" required></div>
+            <div class="field"><label>Cidade *</label><input id="cidade" required></div>
+            <div class="field"><label>UF</label>
+                <select id="uf">
+                    <option>MT</option><option>AC</option><option>AL</option><option>AP</option>
+                    <option>AM</option><option>BA</option><option>CE</option><option>DF</option>
+                    <option>ES</option><option>GO</option><option>MA</option><option>MG</option>
+                    <option>MS</option><option>PA</option><option>PB</option><option>PR</option>
+                    <option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                    <option>RS</option><option>RO</option><option>RR</option><option>SC</option>
+                    <option>SP</option><option>SE</option><option>TO</option>
+                </select>
+            </div>
+            <div class="field"><label>CEP</label><input id="cep" placeholder="somente dígitos"></div>
+        </div>
+        <div class="grid grid-3" style="margin-top:0.75rem">
+            <div class="field"><label>E-mail</label><input id="email" type="email"></div>
+            <div class="field"><label>Telefone</label><input id="telefone" placeholder="somente dígitos"></div>
+            <div class="field"><label>Celular</label><input id="celular" placeholder="somente dígitos"></div>
+        </div>
+    </div>
+
+    <!-- 2. PADRÃO ELÉTRICO -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-badge">2</span>
+            Padrão Elétrico
+        </div>
+        <div class="grid grid-4">
+            <div class="field"><label>Potência Instalada (kW) *</label><input id="potencia_instalada_kw" type="number" step="0.1" required></div>
+            <div class="field"><label>Tensão Atendimento (V) *</label>
+                <select id="tensao_atendimento_v">
+                    <option>220</option><option>127</option><option>127/220</option><option>220/380</option>
+                </select>
+            </div>
+            <div class="field"><label>Tipo de Conexão *</label>
+                <select id="tipo_conexao" onchange="autoFases()">
+                    <option>MONOFÁSICO</option><option selected>BIFÁSICO</option><option>TRIFÁSICO</option>
+                </select>
+            </div>
+            <div class="field"><label>Tipo de Ramal *</label>
+                <select id="tipo_ramal"><option>AÉREO</option><option>SUBTERRÂNEO</option></select>
+            </div>
+        </div>
+        <div class="grid grid-4" style="margin-top:0.75rem">
+            <div class="field"><label>Disjuntor Geral (A) *</label><input id="disjuntor_geral_a" type="number" value="40" required></div>
+            <div class="field"><label>Potência Disponível (kW)</label><input id="potencia_max_disponivel_kw" type="number" step="0.1" placeholder="padrão = instalada"></div>
+            <div class="field"><label>Demanda Contratada (kW)</label><input id="demanda_contratada_kw" type="number" step="0.1" value="1.0"></div>
+            <div class="field"><label>Fator de Potência</label><input id="fator_potencia" type="number" step="0.01" value="0.92"></div>
+        </div>
+    </div>
+
+    <!-- 3. GERAÇÃO -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-badge">3</span>
+            Dados da Geração
+        </div>
+        <div class="grid grid-4">
+            <div class="field"><label>Tipo de Fonte</label>
+                <select id="tipo_fonte"><option>SOLAR FOTOVOLTAICA</option></select>
+            </div>
+            <div class="field"><label>Modalidade *</label>
+                <select id="modalidade">
+                    <option>Compensação local</option><option>Autoconsumo remoto</option>
+                    <option>Múltiplas UCs</option><option>Geração compartilhada</option>
+                </select>
+            </div>
+            <div class="field"><label>Potência Geração (kWp) *</label><input id="potencia_geracao_kwp" type="number" step="0.1" required></div>
+            <div class="field"><label>Tipo Formulário</label>
+                <select id="tipo_fsa">
+                    <option value="SOLICITACAO">SOLICITACAO</option>
+                    <option value="FSA MICRO <=10">FSA MICRO &lt;=10</option>
+                    <option value="FSA MICRO >10">FSA MICRO &gt;10</option>
+                </select>
+            </div>
+        </div>
+        <div class="grid grid-2" style="margin-top:0.75rem">
+            <div class="field"><label>Previsão — Mês</label>
+                <select id="previsao_mes">
+                    <option>JANEIRO</option><option>FEVEREIRO</option><option>MARÇO</option>
+                    <option>ABRIL</option><option>MAIO</option><option>JUNHO</option>
+                    <option>JULHO</option><option>AGOSTO</option><option>SETEMBRO</option>
+                    <option>OUTUBRO</option><option>NOVEMBRO</option><option>DEZEMBRO</option>
+                </select>
+            </div>
+            <div class="field"><label>Previsão — Ano</label>
+                <input id="previsao_ano" type="number" value="2026" min="2024" max="2035">
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. DETALHES TÉCNICOS -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-badge">4</span>
+            Detalhes Técnicos
+        </div>
+        <div class="grid grid-4">
+            <div class="field"><label>Nº Fases</label><input id="num_fases" type="number" value="2" min="1" max="3"></div>
+            <div class="field"><label>Cabos por Fase</label><input id="cabos_por_fase" type="number" value="1" min="1"></div>
+            <div class="field"><label>Bitola Fase (mm²)</label><input id="bitola_fase_mm2" type="number" step="0.5" value="10"></div>
+            <div class="field"><label>Bitola Neutro (mm²)</label><input id="bitola_neutro_mm2" type="number" step="0.5" value="10"></div>
+        </div>
+        <div class="grid grid-4" style="margin-top:0.75rem">
+            <div class="field"><label>Bitola Terra (mm²)</label><input id="bitola_terra_mm2" type="number" step="0.5" value="10"></div>
+            <div class="field"><label>Fuso UTM</label><input id="fuso" placeholder="ex: 21K"></div>
+            <div class="field"><label>Coord. X (UTM)</label><input id="coord_x_long" type="number" step="1" placeholder="0"></div>
+            <div class="field"><label>Coord. Y (UTM)</label><input id="coord_y_lat" type="number" step="1" placeholder="0"></div>
+        </div>
+        <div class="grid grid-4" style="margin-top:0.75rem">
+            <div class="field"><label>Potência Trafo (kVA)</label><input id="potencia_trafo_kw" type="number" step="1" value="0"></div>
+            <div class="field"><label>DPS CA (kA)</label><input id="dps_ca_ka" type="number" step="1" value="0"></div>
+            <div class="field"><label>Disjuntor CA (A)</label><input id="disjuntor_ca_a" type="number" step="1" value="0"></div>
+            <div class="field">
+                <label>Possui Stringbox?</label>
+                <div class="toggle-group" style="margin-top:0.5rem">
+                    <label><input type="radio" name="tem_stringbox" value="S" onchange="toggleStringbox()"> Sim</label>
+                    <label><input type="radio" name="tem_stringbox" value="N" onchange="toggleStringbox()" checked> Não</label>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-2" id="grid_stringbox" style="margin-top:0.75rem; display:none;">
+            <div class="field"><label>DPS CC (kA)</label><input id="dps_cc_ka" type="number" step="1" value="0"></div>
+            <div class="field"><label>Disjuntor CC (A)</label><input id="disjuntor_cc_a" type="number" step="1" value="0"></div>
+        </div>
+    </div>
+
+    <!-- DATALISTS para autocomplete de equipamentos -->
+    <datalist id="dl-painel-fab"></datalist>
+    <datalist id="dl-painel-mod"></datalist>
+    <datalist id="dl-inversor-fab"></datalist>
+    <datalist id="dl-inversor-mod"></datalist>
+
+    <!-- 5. PAINÉIS -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-badge">5</span>
+            Painéis Solares
+            <span class="section-hint">digite para buscar — novos ficam salvos</span>
+        </div>
+        <table class="equip-table">
+            <thead><tr>
+                <th style="width:60px">Qtd</th><th>Fabricante</th><th>Modelo</th>
+                <th style="width:90px">Área (m²)</th><th style="width:90px">Pot. (kW)</th><th style="width:36px"></th>
+            </tr></thead>
+            <tbody id="paineis-body">
+                <tr>
+                    <td><input type="number" class="p-qty" value="12" style="width:60px"></td>
+                    <td><input class="p-fab" value="CANADIAN SOLAR" list="dl-painel-fab" oninput="onPainelFabChange(this)"></td>
+                    <td><input class="p-mod" value="CS3N-550MS" list="dl-painel-mod"></td>
+                    <td><input type="number" class="p-area" step="0.01" value="2.78"></td>
+                    <td><input type="number" class="p-pot" step="0.001" value="0.55"></td>
+                    <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn-add" onclick="addPainel()">+ Adicionar painel</button>
+    </div>
+
+    <!-- 6. INVERSORES -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-badge">6</span>
+            Inversores
+            <span class="section-hint">digite para buscar — novos ficam salvos</span>
+        </div>
+        <table class="equip-table">
+            <thead><tr>
+                <th style="width:60px">Qtd</th><th>Fabricante</th><th>Modelo</th>
+                <th style="width:90px">Pot. (kW)</th><th style="width:80px">Tensão (V)</th><th style="width:36px"></th>
+            </tr></thead>
+            <tbody id="inversores-body">
+                <tr>
+                    <td><input type="number" class="i-qty" value="1" style="width:60px"></td>
+                    <td><input class="i-fab" value="GROWATT" list="dl-inversor-fab" oninput="onInversorFabChange(this)"></td>
+                    <td><input class="i-mod" value="MIC 6000TL-X" list="dl-inversor-mod"></td>
+                    <td><input type="number" class="i-pot" step="0.1" value="6.0"></td>
+                    <td><input type="number" class="i-ten" step="1" value="220"></td>
+                    <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn-add" onclick="addInversor()">+ Adicionar inversor</button>
+    </div>
+
+    <!-- 7. RELAÇÃO DE CARGA -->
+    <div class="section">
+        <div class="section-title" style="display:flex; justify-content:space-between">
+            <div>
+                <span class="section-badge">7</span>
+                Relação de Carga
+            </div>
+            <div class="toggle-group" style="margin:0">
+                <label class="toggle-label" style="font-size:0.75rem">
+                    <input type="radio" name="modo_carga" value="M" checked onchange="toggleModoCarga()">
+                    Manual
+                </label>
+                <label class="toggle-label" style="font-size:0.75rem">
+                    <input type="radio" name="modo_carga" value="A" onchange="toggleModoCarga()">
+                    Automático
+                </label>
+            </div>
+        </div>
+
+        <!-- Painel Automático -->
+        <div id="carga-auto-panel" class="hidden" style="background:rgba(245,158,11,0.05); border:1px solid rgba(245,158,11,0.2); border-radius:8px; padding:1rem; margin-bottom:1rem">
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.8rem">
+                O sistema gerará uma relação de carga realista para atingir a demanda desejada (kVA).
+            </div>
+            <div style="display:flex; gap:1rem; align-items:flex-end">
+                <div class="field" style="width:150px">
+                    <label>Alvo: Demanda (kVA)</label>
+                    <input id="carga_alvo_kva" type="number" step="0.1" placeholder="Ex: 12.0">
+                </div>
+                <div class="field" style="width:120px">
+                    <label>Fator Pot. Padrão</label>
+                    <input id="carga_fp" type="number" step="0.01" value="0.92" readonly style="opacity:0.6; cursor:not-allowed">
+                </div>
+                <button class="btn-demo" style="padding:0.6rem 1rem" onclick="gerarCargaAutomatica()">⚡ Gerar Carga</button>
+            </div>
+            <div id="carga-auto-status" style="margin-top:0.8rem; font-size:0.8rem; font-weight:600; color:var(--green)"></div>
+        </div>
+
+        <table class="equip-table">
+            <thead><tr>
+                <th style="width:60px">Qtd</th><th>Equipamento</th>
+                <th style="width:100px">Pot. (W)</th><th style="width:90px">F. Demanda</th><th style="width:36px"></th>
+            </tr></thead>
+            <tbody id="carga-body">
+                <tr>
+                    <td><input type="number" class="c-qty" value="1" style="width:60px"></td>
+                    <td><input class="c-equip" value="Geladeira"></td>
+                    <td><input type="number" class="c-pot" value="120"></td>
+                    <td><input type="number" class="c-fator" step="0.01" value="1.0"></td>
+                    <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>
+                </tr>
+            </tbody>
+        </table>
+        <button class="btn-add" onclick="addCarga()">+ Adicionar equipamento</button>
+    </div>
+
+    <!-- 8. UCs BENEFICIÁRIAS -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-badge">8</span>
+            UCs Beneficiárias
+            <span class="section-hint">opcional — Autoconsumo remoto / Múltiplas UCs</span>
+        </div>
+
+        <div style="margin-bottom: 0.5rem">
+            <label style="display:block; margin-bottom:0.5rem; color:var(--text)">Possui UCs Beneficiárias?</label>
+            <div class="toggle-group">
+                <label class="toggle-label">
+                    <input type="radio" name="tem_ucs" value="N" checked onchange="toggleUCs()">
+                    Não
+                </label>
+                <label class="toggle-label">
+                    <input type="radio" name="tem_ucs" value="S" onchange="toggleUCs()">
+                    Sim
+                </label>
+            </div>
+        </div>
+
+        <div id="ucs-container" class="hidden">
+            <table class="equip-table">
+                <thead><tr>
+                    <th>Código UC</th><th>Titular</th><th style="width:130px">CPF/CNPJ</th>
+                    <th>Endereço</th><th style="width:80px">% Crédito</th><th style="width:36px"></th>
+                </tr></thead>
+                <tbody id="ucs-body">
+                    <!-- linhas adicionadas dinamicamente -->
+                </tbody>
+            </table>
+            <button class="btn-add" onclick="addUC()">+ Adicionar UC beneficiária</button>
+        </div>
+    </div>
+
+    <!-- 9. RESPONSÁVEL TÉCNICO -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-badge">9</span>
+            Responsável Técnico
+        </div>
+        <div class="grid grid-3">
+            <div class="field"><label>Nome</label><input id="resp_nome"></div>
+            <div class="field"><label>Telefone</label><input id="resp_telefone" placeholder="somente dígitos"></div>
+            <div class="field"><label>E-mail</label><input id="resp_email" type="email"></div>
+        </div>
+    </div>
+
+    </div>
+
+    <!-- 10. FORMULÁRIO DE ORÇAMENTO -->
+    <div class="section" id="section-formulario">
+        <div class="section-title">
+            <span class="section-badge">10</span>
+            Opções do Formulário de Orçamento
+            <span class="section-hint">marcadas com "X" ou "SIM"</span>
+        </div>
+        <div class="toggle-group">
+            <label><input type="radio" name="modo_formulario" value="P" onchange="toggleFormulario()" checked> Padrão (Sugerido)</label>
+            <label><input type="radio" name="modo_formulario" value="C" onchange="toggleFormulario()"> Personalizado</label>
+        </div>
+        <div id="grid_formulario" class="grid grid-3" style="margin-top: 1rem; display:none;">
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_1" checked> 1 (Pessoa Jurídica/Identificação)</label>
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_1_2" checked> 1.2 (Pessoa Física CPF/RG)</label>
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_1_3" checked> 1.3 (Endereço das Instalações)</label>
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_1_4" checked> 1.4 (Declaracao Carga Instalada)</label>
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_2_1" checked> 2.1 (Doc Responsabilidade/CREA)</label>
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_2_3" checked> 2.3 (Diagrama Unifilar)</label>
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_2_4" checked> 2.4 (Relatório/Conversores)</label>
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_2_5" checked> 2.5 (Dados ANEEL)</label>
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_3_4" checked> 3.4 (Declaração Normas ABNT)</label>
+            <label style="display:flex; align-items:center; gap:0.5rem"><input type="checkbox" id="form_3_1_sim" checked> 3.1 - Deseja Vistoria (SIM)</label>
+        </div>
+    </div>
+
+    <!-- RESULTADO E BOTÕES -->
+    <div class="actions">
+        <button class="btn-gerar" id="btn-gerar" onclick="gerarDocumentos()">⚡ Gerar Documentos</button>
+    </div>
+
+    <div id="status" class="status"></div>
+
+</div>
+
+<footer>
+    Memorial GD — Pipeline de geração de documentos para projetos de geração distribuída
+</footer>
+
+<script>
+// ─── Utilitários ─────────────────────────────────────────────────────────────
+function val(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+}
+
+function setVal(id, v) {
+    const el = document.getElementById(id);
+    if (el) el.value = v;
+}
+
+function numVal(id, fallback = 0) {
+    const v = parseFloat(val(id));
+    return isNaN(v) ? fallback : v;
+}
+
+function intVal(id, fallback = 0) {
+    const v = parseInt(val(id));
+    return isNaN(v) ? fallback : v;
+}
+
+// ─── Auto-preenchimento de Nº Fases ──────────────────────────────────────────
+function autoFases() {
+    const conn = val('tipo_conexao');
+    const fases = { MONOFÁSICO: 1, BIFÁSICO: 2, TRIFÁSICO: 3 };
+    setVal('num_fases', fases[conn] || 2);
+}
+
+// ─── Adicionar linhas de equipamentos ────────────────────────────────────────
+function addPainel() {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="number" class="p-qty" value="1" style="width:60px"></td>
+        <td><input class="p-fab" list="dl-painel-fab" oninput="onPainelFabChange(this)"></td>
+        <td><input class="p-mod" list="dl-painel-mod"></td>
+        <td><input type="number" class="p-area" step="0.01"></td>
+        <td><input type="number" class="p-pot" step="0.001"></td>
+        <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
+    document.getElementById('paineis-body').appendChild(row);
+    row.querySelector('.p-fab').focus();
+}
+
+function addInversor() {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="number" class="i-qty" value="1" style="width:60px"></td>
+        <td><input class="i-fab" list="dl-inversor-fab" oninput="onInversorFabChange(this)"></td>
+        <td><input class="i-mod" list="dl-inversor-mod"></td>
+        <td><input type="number" class="i-pot" step="0.1"></td>
+        <td><input type="number" class="i-ten" step="1" value="220"></td>
+        <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
+    document.getElementById('inversores-body').appendChild(row);
+    row.querySelector('.i-fab').focus();
+}
+
+function addCarga(qty='', equip='', pot='', fator='1.00') {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="number" class="c-qty" value="${qty || 1}" style="width:60px"></td>
+        <td><input class="c-equip" value="${equip}"></td>
+        <td><input type="number" class="c-pot" value="${pot}"></td>
+        <td><input type="number" class="c-fator" step="0.01" value="${fator}"></td>
+        <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
+    document.getElementById('carga-body').appendChild(row);
+    if (!equip) row.querySelector('.c-equip').focus();
+}
+
+function addUC() {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input class="uc-cod"></td>
+        <td><input class="uc-tit"></td>
+        <td><input class="uc-cpf" placeholder="somente dígitos"></td>
+        <td><input class="uc-end"></td>
+        <td><input type="number" class="uc-pct" step="0.01" min="0" max="100" placeholder="%"></td>
+        <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
+    document.getElementById('ucs-body').appendChild(row);
+    row.querySelector('.uc-cod').focus();
+}
+
+function toggleUCs() {
+    const temUCs = document.querySelector('input[name="tem_ucs"]:checked').value === 'S';
+    const container = document.getElementById('ucs-container');
+    const tbody = document.getElementById('ucs-body');
+
+    if (temUCs) {
+        container.classList.remove('hidden');
+        if (tbody.children.length === 0) {
+            addUC(); // Adiciona primeira linha automaticamente
+        }
+    } else {
+        container.classList.add('hidden');
+        tbody.innerHTML = ''; // Limpa as UCs se o usuário marcar "Não"
+    }
+}
+
+// ─── Lógica de Carga Automática ───────────────────────────────────────────────
+function toggleModoCarga() {
+    const modo = document.querySelector('input[name="modo_carga"]:checked').value;
+    const panel = document.getElementById('carga-auto-panel');
+    const inputAlvo = document.getElementById('carga_alvo_kva');
+    
+    if (modo === 'A') {
+        panel.classList.remove('hidden');
+        // Pré-preenche com a potência instalada se estiver vazia
+        if (!inputAlvo.value) {
+            const potInstalada = document.getElementById('potencia_instalada_kw').value;
+            if (potInstalada) inputAlvo.value = potInstalada;
+        }
+    } else {
+        panel.classList.add('hidden');
+        document.getElementById('carga-auto-status').innerHTML = '';
+    }
+}
+
+function gerarCargaAutomatica() {
+    const alvoKVA = parseFloat(document.getElementById('carga_alvo_kva').value);
+    if (isNaN(alvoKVA) || alvoKVA <= 0) {
+        alert('Por favor, informe um valor válido para a Demanda Alvo (kVA).');
+        return;
+    }
+
+    // Conforme solicitado: Fator de Demanda fixo em 0.92 para todos os equipamentos
+    const fd = 0.92;
+    const fp = 0.92;
+    const alvoKW = alvoKVA * fp;
+    
+    // Lista reduzida de equipamentos (máximo 10 itens para não lotar o memorial)
+    const baseEquips = [
+        { nome: 'Refrigerador / Geladeira', pot: 350 },
+        { nome: 'Chuveiro Elétrico', pot: 5500 },
+        { nome: 'Ar Condicionado 9.000 BTU', pot: 900 },
+        { nome: 'Máquina de Lavar', pot: 700 },
+        { nome: 'Televisão', pot: 150 },
+        { nome: 'Micro-ondas', pot: 1200 },
+        { nome: 'Ferro de Passar', pot: 1000 },
+        { nome: 'Computador / Notebook', pot: 250 },
+        { nome: 'Lâmpadas Gerais (LED)', pot: 15 },
+        { nome: 'Tomadas de Uso Geral (TUG)', pot: 100 }
+    ];
+
+    document.getElementById('carga-body').innerHTML = ''; // Limpar tabela atual
+    
+    let somaKW = 0;
+    const count = {}; // Para agrupar quantidades
+    
+    // Loop para preencher até chegar perto do alvo (com margem de 0.5 kW)
+    // Usamos iterações generosas porque preencheremos apenas usando quantidades desses 10
+    let iteracoes = 0;
+    while (somaKW < (alvoKW - 0.5) && iteracoes < 300) {
+        // Escolher equipamento aleatório dos 10 disponíveis
+        const idx = Math.floor(Math.random() * baseEquips.length);
+        const eq = baseEquips[idx];
+        
+        let qtdAdd = 1;
+        // Adicionar lâmpadas e tomadas em lotes para ficar mais realista
+        if (eq.nome.includes('Lâmpadas') || eq.nome.includes('Tomadas')) {
+            qtdAdd = 5;
+        }
+        
+        // Calcular potência demandada deste incremento em kW
+        const kwItem = (eq.pot * qtdAdd * fd) / 1000;
+        
+        // Evitar ultrapassar muito o alvo
+        if (somaKW + kwItem <= alvoKW + 1.0 || somaKW === 0) {
+            count[idx] = (count[idx] || 0) + qtdAdd;
+            somaKW += kwItem;
+        }
+        iteracoes++;
+    }
+
+    // Processar os itens agrupados e adicioná-los
+    let linhas = 0;
+    for (const [idxStr, qty] of Object.entries(count)) {
+        const eq = baseEquips[parseInt(idxStr)];
+        addCarga(qty, eq.nome, eq.pot, fd.toFixed(2));
+        linhas++;
+    }
+    
+    // Ajuste fino: Diferença residual coberta com tomadas/iluminação genérica
+    if (somaKW < alvoKW) {
+        const diffKW = alvoKW - somaKW;
+        // Colocaremos um equipamento genérico com fd=0.92 para fechar a conta exatamente no alvo
+        const diffW = Math.round((diffKW * 1000) / fd);
+        if (diffW > 0) {
+            addCarga(1, 'Cargas Específicas Diversas', diffW, fd.toFixed(2));
+            somaKW += (diffW * fd) / 1000;
+            linhas++;
+        }
+    }
+
+    // Atualizar status na interface
+    const kvaFinal = somaKW / fp;
+    document.getElementById('carga-auto-status').innerHTML = 
+        `Carga gerada: ${linhas} itens. ${somaKW.toFixed(2)} kW demandados ≈ ${kvaFinal.toFixed(2)} kVA (FP: 0.92, FD: 0.92)`;
+}
+
+// ─── Coleta dos dados das tabelas ─────────────────────────────────────────────
+function collectPaineis() {
+    return Array.from(document.querySelectorAll('#paineis-body tr')).map(r => ({
+        quantidade: parseInt(r.querySelector('.p-qty').value) || 0,
+        fabricante: r.querySelector('.p-fab').value.trim(),
+        modelo:     r.querySelector('.p-mod').value.trim(),
+        area_m2:    parseFloat(r.querySelector('.p-area').value) || 0,
+        potencia_kw: parseFloat(r.querySelector('.p-pot').value) || 0,
+    })).filter(p => p.quantidade > 0 && p.fabricante);
+}
+
+function collectInversores() {
+    return Array.from(document.querySelectorAll('#inversores-body tr')).map(r => ({
+        quantidade:     parseInt(r.querySelector('.i-qty').value) || 0,
+        fabricante:     r.querySelector('.i-fab').value.trim(),
+        modelo:         r.querySelector('.i-mod').value.trim(),
+        potencia_kw:    parseFloat(r.querySelector('.i-pot').value) || 0,
+        tensao_nominal_v: parseFloat(r.querySelector('.i-ten').value) || 0,
+    })).filter(i => i.quantidade > 0 && i.fabricante);
+}
+
+function collectCarga() {
+    return Array.from(document.querySelectorAll('#carga-body tr')).map(r => ({
+        quantidade:   parseInt(r.querySelector('.c-qty').value) || 0,
+        equipamento:  r.querySelector('.c-equip').value.trim(),
+        potencia_w:   parseFloat(r.querySelector('.c-pot').value) || 0,
+        fator_demanda: parseFloat(r.querySelector('.c-fator').value) || 1.0,
+    })).filter(c => c.quantidade > 0 && c.equipamento);
+}
+
+function collectUCs() {
+    // Se o radio está em 'Não', retorna lista vazia ignorando o que está na tabela
+    if (document.querySelector('input[name="tem_ucs"]:checked').value === 'N') {
+        return [];
+    }
+    
+    return Array.from(document.querySelectorAll('#ucs-body tr')).map(r => ({
+        codigo_uc:  r.querySelector('.uc-cod').value.trim(),
+        titular:    r.querySelector('.uc-tit').value.trim(),
+        cpf_cnpj:   r.querySelector('.uc-cpf').value.trim(),
+        endereco:   r.querySelector('.uc-end').value.trim(),
+        percentual: parseFloat(r.querySelector('.uc-pct').value) || 0,
+    })).filter(u => u.codigo_uc);
+}
+
+// ─── Validação ────────────────────────────────────────────────────────────────
+const CAMPOS_OBRIGATORIOS = [
+    { id: 'codigo_uc',              label: 'Código UC' },
+    { id: 'titular',                label: 'Titular' },
+    { id: 'cpf_cnpj',               label: 'CPF/CNPJ' },
+    { id: 'logradouro',             label: 'Logradouro' },
+    { id: 'bairro',                 label: 'Bairro' },
+    { id: 'cidade',                 label: 'Cidade' },
+    { id: 'potencia_instalada_kw',  label: 'Potência Instalada' },
+    { id: 'disjuntor_geral_a',      label: 'Disjuntor Geral' },
+    { id: 'potencia_geracao_kwp',   label: 'Potência de Geração' },
+];
+
+function validar() {
+    document.querySelectorAll('input.invalid').forEach(el => el.classList.remove('invalid'));
+    const erros = [];
+
+    for (const { id, label } of CAMPOS_OBRIGATORIOS) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        const v = el.value.trim();
+        if (!v || v === '0' && id === 'potencia_instalada_kw') {
+            el.classList.add('invalid');
+            erros.push(label);
+        }
+    }
+
+    const kw = parseFloat(document.getElementById('potencia_geracao_kwp').value);
+    if (!kw || kw <= 0) {
+        document.getElementById('potencia_geracao_kwp').classList.add('invalid');
+        if (!erros.includes('Potência de Geração')) erros.push('Potência de Geração');
+    }
+
+    if (collectPaineis().length === 0) erros.push('Pelo menos 1 painel solar');
+    if (collectInversores().length === 0) erros.push('Pelo menos 1 inversor');
+
+    return erros;
+}
+
+// ─── Status / resultado ───────────────────────────────────────────────────────
+function setStatus(type, html) {
+    const el = document.getElementById('status');
+    el.className = 'status ' + type;
+    el.innerHTML = html;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ─── Timer de progresso ───────────────────────────────────────────────────────
+let _timerInterval = null;
+
+function iniciarTimer() {
+    pararTimer();
+    const inicio = Date.now();
+    _timerInterval = setInterval(() => {
+        const seg = Math.floor((Date.now() - inicio) / 1000);
+        const el = document.getElementById('timer-text');
+        if (el) el.textContent = `Tempo decorrido: ${seg}s (pode levar até 2 min)`;
+    }, 1000);
+}
+
+function pararTimer() {
+    if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
+}
+
+// ─── Geração e Salvamento ─────────────────────────────────────────────────────
+
+function buildPayload() {
+    const f_padrao = document.querySelector('input[name="modo_formulario"][value="P"]').checked;
+    let formulario_items = null;
+    if (!f_padrao) {
+        formulario_items = {
+            "1": document.getElementById('form_1').checked ? "X" : "",
+            "1.2": document.getElementById('form_1_2').checked ? "X" : "",
+            "1.3": document.getElementById('form_1_3').checked ? "X" : "",
+            "1.4": document.getElementById('form_1_4').checked ? "X" : "",
+            "2.1": document.getElementById('form_2_1').checked ? "X" : "",
+            "2.3": document.getElementById('form_2_3').checked ? "X" : "",
+            "2.4": document.getElementById('form_2_4').checked ? "X" : "",
+            "2.5": document.getElementById('form_2_5').checked ? "X" : "",
+            "3.4": document.getElementById('form_3_4').checked ? "X" : "",
+            "3.1": document.getElementById('form_3_1_sim').checked ? "SIM" : ""
+        };
+    }
+
+    return {
+        codigo_uc:  val('codigo_uc'),
+        titular:    val('titular'),
+        classe:     val('classe'),
+        cpf_cnpj:   val('cpf_cnpj'),
+        logradouro: val('logradouro'),
+        numero:     val('numero'),
+        bairro:     val('bairro'),
+        cidade:     val('cidade'),
+        uf:         val('uf'),
+        cep:        val('cep'),
+        email:      val('email'),
+        telefone:   val('telefone'),
+        celular:    val('celular'),
+
+        potencia_instalada_kw: numVal('potencia_instalada_kw'),
+        tensao_atendimento_v:  val('tensao_atendimento_v'),
+        tipo_conexao:          val('tipo_conexao'),
+        tipo_ramal:            val('tipo_ramal'),
+
+        tipo_fonte:            val('tipo_fonte'),
+        modalidade:            val('modalidade'),
+        potencia_geracao_kwp:  numVal('potencia_geracao_kwp'),
+        tipo_fsa:              val('tipo_fsa'),
+        previsao_mes:          val('previsao_mes'),
+        previsao_ano:          intVal('previsao_ano', 2026),
+
+        potencia_trafo_kw:          numVal('potencia_trafo_kw'),
+        dps_ca_ka:                  numVal('dps_ca_ka'),
+        disjuntor_ca_a:             numVal('disjuntor_ca_a'),
+        tem_stringbox:              document.querySelector('input[name="tem_stringbox"]:checked').value === 'S',
+        dps_cc_ka:                  numVal('dps_cc_ka'),
+        disjuntor_cc_a:             numVal('disjuntor_cc_a'),
+
+        disjuntor_geral_a:          intVal('disjuntor_geral_a', 40),
+        potencia_max_disponivel_kw: numVal('potencia_max_disponivel_kw') || numVal('potencia_instalada_kw'),
+        demanda_contratada_kw:      numVal('demanda_contratada_kw', 1.0),
+        fator_potencia:             numVal('fator_potencia', 0.92),
+        num_fases:                  intVal('num_fases', 2),
+        cabos_por_fase:             intVal('cabos_por_fase', 1),
+        bitola_fase_mm2:            numVal('bitola_fase_mm2', 10),
+        bitola_neutro_mm2:          numVal('bitola_neutro_mm2', 10),
+        bitola_terra_mm2:           numVal('bitola_terra_mm2', 10),
+        fuso:                       val('fuso'),
+        coord_x_long:               numVal('coord_x_long'),
+        coord_y_lat:                numVal('coord_y_lat'),
+
+        paineis:           collectPaineis(),
+        inversores:        collectInversores(),
+        carga_instalada:   collectCarga(),
+        ucs_beneficiarias: collectUCs(),
+
+        resp_nome:     val('resp_nome'),
+        resp_telefone: val('resp_telefone'),
+        resp_email:    val('resp_email'),
+
+        formulario_items: formulario_items
+    };
+}
+
+async function gerarDocumentos() {
+    const erros = validar();
+    if (erros.length > 0) {
+        const lista = erros.map(e => `<li>${e}</li>`).join('');
+        setStatus('error', `
+            <strong>Preencha os campos obrigatórios:</strong>
+            <ul class="error-list">${lista}</ul>
+        `);
+        const primeiro = document.querySelector('input.invalid');
+        if (primeiro) primeiro.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
+
+    const btn = document.getElementById('btn-gerar');
+    btn.disabled = true;
+    btn.textContent = 'Gerando...';
+
+    setStatus('loading', `
+        <div><span class="spinner"></span><strong>Gerando documentos...</strong></div>
+        <div id="timer-text" class="timer-text">Aguarde...</div>
+    `);
+    iniciarTimer();
+
+    const payload = buildPayload();
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3 * 60 * 1000);
+
+    try {
+        const res = await fetch('/api/gerar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+        const data = await res.json();
+
+        if (data.ok) {
+            const procLink = data.procuracao_url
+                ? `<a href="${data.procuracao_url}" class="dl-proc" download="${data.procuracao_nome}">📜 ${data.procuracao_nome}</a>`
+                : '';
+            setStatus('success', `
+                <strong>Documentos gerados com sucesso!</strong>
+                <div class="download-links">
+                    <a href="${data.xlsx_url}" class="dl-xlsx" download="${data.xlsx_nome}">
+                        📊 ${data.xlsx_nome}
+                    </a>
+                    <a href="${data.pdf_url}" class="dl-pdf" download="${data.pdf_nome}">
+                        📄 ${data.pdf_nome}
+                    </a>
+                    ${procLink}
+                </div>
+                <div><button class="btn-nova" onclick="novaSolicitacao()">+ Nova Solicitação</button></div>
+            `);
+        } else {
+            const detalhe = data.relatorio
+                ? `<br><small style="opacity:0.8">${JSON.stringify(data.relatorio, null, 2).substring(0, 300)}</small>`
+                : '';
+            setStatus('error', `<strong>Erro:</strong> ${data.error || 'Falha desconhecida'}${detalhe}`);
+        }
+    } catch (e) {
+        clearTimeout(timeoutId);
+        const msg = e.name === 'AbortError'
+            ? 'Tempo limite excedido (3 min). O servidor pode estar sobrecarregado.'
+            : e.message;
+        setStatus('error', `<strong>Erro de conexão:</strong> ${msg}`);
+    } finally {
+        pararTimer();
+        btn.disabled = false;
+        btn.textContent = '⚡ Gerar Documentos';
+    }
+}
+
+// ─── Nova solicitação ─────────────────────────────────────────────────────────
+function novaSolicitacao() {
+    document.getElementById('status').className = 'status';
+    document.getElementById('status').innerHTML = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─── Salvar / Carregar Projetos ───────────────────────────────────────────────
+
+// (removido: promtSalvarProjeto — substituído por abrirModalSalvar)
+
+// (removido: funções antigas abrirModalProjetos/fecharModalProjetos — substituídas pelo novo sistema com modal)
+
+// (removido: carregarProjeto antigo sem parâmetro — ver nova versão abaixo com populateForm)
+
+
+// ─── Preencher dados de exemplo ───────────────────────────────────────────────
+function preencherDados() {
+    setVal('codigo_uc', '3941140');
+    setVal('titular', 'APARECIDO MENEZES DOS SANTOS');
+    setVal('cpf_cnpj', '36209562191');
+    document.getElementById('classe').value = 'RESIDENCIAL';
+    setVal('logradouro', 'RUA DAS FLORES');
+    setVal('numero', '123');
+    setVal('bairro', 'CENTRO');
+    setVal('cidade', 'SINOP');
+    document.getElementById('uf').value = 'MT';
+    setVal('cep', '78550000');
+    setVal('email', 'aparecido@exemplo.com');
+    setVal('telefone', '66999990000');
+    setVal('celular', '66999990001');
+
+    setVal('potencia_instalada_kw', '6.6');
+    document.getElementById('tensao_atendimento_v').value = '220';
+    document.getElementById('tipo_conexao').value = 'BIFÁSICO';
+    autoFases();
+    document.getElementById('tipo_ramal').value = 'AÉREO';
+    setVal('disjuntor_geral_a', '40');
+    setVal('potencia_max_disponivel_kw', '6.6');
+    setVal('demanda_contratada_kw', '1.0');
+    setVal('fator_potencia', '0.92');
+
+    document.getElementById('tipo_fsa').value = 'SOLICITACAO';
+    document.getElementById('modalidade').value = 'Compensação local';
+    setVal('potencia_geracao_kwp', '6.6');
+    document.getElementById('previsao_mes').value = 'JANEIRO';
+    setVal('previsao_ano', '2026');
+
+    setVal('fuso', '21K');
+    setVal('coord_x_long', '391000');
+    setVal('coord_y_lat', '8700000');
+    setVal('bitola_fase_mm2', '10');
+    setVal('bitola_neutro_mm2', '10');
+    setVal('bitola_terra_mm2', '10');
+
+    document.getElementById('paineis-body').innerHTML = '';
+    const paineis = [[12, 'CANADIAN SOLAR', 'CS3N-550MS', 2.78, 0.55]];
+    paineis.forEach(([qty, fab, mod, area, pot]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" class="p-qty" value="${qty}" style="width:60px"></td>
+            <td><input class="p-fab" value="${fab}" list="dl-painel-fab" oninput="onPainelFabChange(this)"></td>
+            <td><input class="p-mod" value="${mod}" list="dl-painel-mod"></td>
+            <td><input type="number" class="p-area" step="0.01" value="${area}"></td>
+            <td><input type="number" class="p-pot" step="0.001" value="${pot}"></td>
+            <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
+        document.getElementById('paineis-body').appendChild(row);
+    });
+
+    document.getElementById('inversores-body').innerHTML = '';
+    const inversores = [[1, 'GROWATT', 'MIC 6000TL-X', 6.0, 220]];
+    inversores.forEach(([qty, fab, mod, pot, ten]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" class="i-qty" value="${qty}" style="width:60px"></td>
+            <td><input class="i-fab" value="${fab}" list="dl-inversor-fab" oninput="onInversorFabChange(this)"></td>
+            <td><input class="i-mod" value="${mod}" list="dl-inversor-mod"></td>
+            <td><input type="number" class="i-pot" step="0.1" value="${pot}"></td>
+            <td><input type="number" class="i-ten" step="1" value="${ten}"></td>
+            <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
+        document.getElementById('inversores-body').appendChild(row);
+    });
+
+    // Zera toda a tabela antes de preencher
+    document.getElementById('carga-body').innerHTML = '';
+    
+    // Modo automático por padrão no "Dados de Exemplo"
+    document.querySelector('input[name="modo_carga"][value="A"]').checked = true;
+    toggleModoCarga();
+    // Coloca a potência Instalada (que é 6.6) no campo de alvo do Automático e gera
+    document.getElementById('carga_alvo_kva').value = '6.6';
+    gerarCargaAutomatica();
+
+    // Exemplos de UCs beneficiárias
+    document.querySelector('input[name="tem_ucs"][value="S"]').checked = true;
+    toggleUCs();
+    document.getElementById('ucs-body').innerHTML = '';
+    const ucs = [['1234567', 'MARIA DA SILVA', '11122233344', 'RUA ALTO DA GLÓRIA, 10', 50]];
+    ucs.forEach(([cod, tit, cpf, end, pct]) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input class="uc-cod" value="${cod}"></td>
+            <td><input class="uc-tit" value="${tit}"></td>
+            <td><input class="uc-cpf" value="${cpf}" placeholder="somente dígitos"></td>
+            <td><input class="uc-end" value="${end}"></td>
+            <td><input type="number" class="uc-pct" step="0.01" min="0" max="100" value="${pct}" placeholder="%"></td>
+            <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
+        document.getElementById('ucs-body').appendChild(row);
+    });
+
+    setVal('resp_nome', 'ENG. JOÃO DA SILVA');
+    setVal('resp_telefone', '66911112222');
+    setVal('resp_email', 'engjoao@exemplo.com');
+}
+
+// ─── Sistema de Autocomplete de Equipamentos ──────────────────────────────────
+let _equipDB = { paineis: {}, inversores: {} };
+
+async function carregarEquipamentos() {
+    try {
+        const res = await fetch('/api/equipamentos');
+        if (res.ok) {
+            _equipDB = await res.json();
+            atualizarDatalistFabricantes();
+            console.log(`Equipamentos carregados: ${Object.keys(_equipDB.paineis).length} fab. painéis, ${Object.keys(_equipDB.inversores).length} fab. inversores`);
+        }
+    } catch (e) {
+        console.warn('Não foi possível carregar equipamentos:', e.message);
+    }
+}
+
+function atualizarDatalistFabricantes() {
+    const dlPFab = document.getElementById('dl-painel-fab');
+    dlPFab.innerHTML = Object.keys(_equipDB.paineis)
+        .map(f => `<option value="${f}">`)
+        .join('');
+
+    const dlIFab = document.getElementById('dl-inversor-fab');
+    dlIFab.innerHTML = Object.keys(_equipDB.inversores)
+        .map(f => `<option value="${f}">`)
+        .join('');
+}
+
+function atualizarDatalistModelos(tipo, fabricante) {
+    const db = tipo === 'painel' ? _equipDB.paineis : _equipDB.inversores;
+    const dlId = tipo === 'painel' ? 'dl-painel-mod' : 'dl-inversor-mod';
+    const dl = document.getElementById(dlId);
+
+    const fab = (fabricante || '').trim().toUpperCase();
+    const modelos = db[fab] || [];
+
+    let opcoes = modelos;
+    if (opcoes.length === 0 && fab.length >= 2) {
+        for (const [key, mods] of Object.entries(db)) {
+            if (key.includes(fab)) {
+                opcoes = opcoes.concat(mods);
+            }
+        }
+    }
+
+    dl.innerHTML = opcoes.map(m => `<option value="${m}">`).join('');
+}
+
+function onPainelFabChange(input) {
+    atualizarDatalistModelos('painel', input.value);
+}
+
+function onInversorFabChange(input) {
+    atualizarDatalistModelos('inversor', input.value);
+}
+
+// ─── Salvar / Carregar Projetos ───────────────────────────────────────────────
+function collectAllData() {
+    return {
+        codigo_uc:  val('codigo_uc'),
+        titular:    val('titular'),
+        classe:     val('classe'),
+        cpf_cnpj:   val('cpf_cnpj'),
+        logradouro: val('logradouro'),
+        numero:     val('numero'),
+        bairro:     val('bairro'),
+        cidade:     val('cidade'),
+        uf:         val('uf'),
+        cep:        val('cep'),
+        email:      val('email'),
+        telefone:   val('telefone'),
+        celular:    val('celular'),
+
+        potencia_instalada_kw:      numVal('potencia_instalada_kw'),
+        tensao_atendimento_v:       val('tensao_atendimento_v'),
+        tipo_conexao:               val('tipo_conexao'),
+        tipo_ramal:                 val('tipo_ramal'),
+
+        tipo_fonte:                 val('tipo_fonte'),
+        modalidade:                 val('modalidade'),
+        potencia_geracao_kwp:       numVal('potencia_geracao_kwp'),
+        tipo_fsa:                   val('tipo_fsa'),
+        previsao_mes:               val('previsao_mes'),
+        previsao_ano:               intVal('previsao_ano', 2026),
+
+        disjuntor_geral_a:          intVal('disjuntor_geral_a', 40),
+        potencia_max_disponivel_kw: numVal('potencia_max_disponivel_kw'),
+        demanda_contratada_kw:      numVal('demanda_contratada_kw', 1.0),
+        fator_potencia:             numVal('fator_potencia', 0.92),
+        num_fases:                  intVal('num_fases', 2),
+        cabos_por_fase:             intVal('cabos_por_fase', 1),
+        bitola_fase_mm2:            numVal('bitola_fase_mm2', 10),
+        bitola_neutro_mm2:          numVal('bitola_neutro_mm2', 10),
+        bitola_terra_mm2:           numVal('bitola_terra_mm2', 10),
+        fuso:                       val('fuso'),
+        coord_x_long:               numVal('coord_x_long'),
+        coord_y_lat:                numVal('coord_y_lat'),
+
+        paineis:           collectPaineis(),
+        inversores:        collectInversores(),
+        carga_instalada:   collectCarga(),
+        ucs_beneficiarias: collectUCs(),
+        _tem_ucs: document.querySelector('input[name="tem_ucs"]:checked')?.value || 'N',
+        _modo_carga: document.querySelector('input[name="modo_carga"]:checked')?.value || 'M',
+
+        resp_nome:     val('resp_nome'),
+        resp_telefone: val('resp_telefone'),
+        resp_email:    val('resp_email'),
+    };
+}
+
+let _projetoAtual = null;
+
+async function abrirModalSalvar() {
+    const select = document.getElementById('select_salvar_existente');
+    select.innerHTML = '<option value="">Cadeia de projetos...</option>';
+
+    try {
+        const res = await fetch('/api/projetos');
+        const data = await res.json();
+        const projetos = data.projetos || [];
+
+        select.innerHTML = '<option value="">-- Selecionar projeto para sobrescrever --</option>';
+        if (projetos.length > 0) {
+            projetos.forEach(nome => {
+                const opt = document.createElement('option');
+                opt.value = nome;
+                opt.textContent = nome;
+                if (_projetoAtual === nome) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+    } catch (e) {
+        select.innerHTML = '<option value="">Erro ao carregar projetos existentes</option>';
+    }
+
+    // Pré-preenche o Titular como sugestão de novo nome
+    const nomeSugerido = document.getElementById('titular')?.value || '';
+    document.getElementById('input_novo_projeto').value = nomeSugerido;
+
+    document.getElementById('modal-salvar').style.display = 'flex';
+}
+
+function fecharModalSalvar() {
+    document.getElementById('modal-salvar').style.display = 'none';
+}
+
+async function submeterSalvar(isSobrescrever) {
+    let nome = '';
+    if (isSobrescrever) {
+        nome = document.getElementById('select_salvar_existente').value;
+        if (!nome) {
+            alert('Selecione um projeto existente para sobrescrever!');
+            return;
+        }
+    } else {
+        nome = document.getElementById('input_novo_projeto').value;
+        if (!nome || !nome.trim()) {
+            alert('Digite um nome válido para o novo projeto!');
+            return;
+        }
+    }
+
+    const payload = collectAllData();
+    payload.nome_projeto = nome.trim();
+
+    try {
+        const res = await fetch('/api/projetos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.ok) {
+            _projetoAtual = data.nome;
+            alert(`Projeto "${data.nome}" salvo com sucesso!`);
+            fecharModalSalvar();
+        } else {
+            alert(`Erro ao salvar: ${data.error}`);
+        }
+    } catch (e) {
+        alert(`Erro de conexão: ${e.message}`);
+    }
+}
+
+async function abrirModalProjetos() {
+    document.getElementById('modal-projetos').style.display = 'flex';
+    const lista = document.getElementById('modal-lista-projetos');
+    lista.innerHTML = '<div class="modal-empty">Carregando...</div>';
+
+    try {
+        const res = await fetch('/api/projetos');
+        const data = await res.json();
+        const projetos = data.projetos || [];
+
+        if (projetos.length === 0) {
+            lista.innerHTML = '<div class="modal-empty">Nenhum projeto salvo ainda.</div>';
+            return;
+        }
+
+        lista.innerHTML = projetos.map(nome =>
+            `<div class="modal-projeto-item" onclick="carregarProjeto('${nome.replace(/'/g, "\\'")}')">
+                <span class="modal-projeto-icon">&#128196;</span>
+                <span>${nome}</span>
+            </div>`
+        ).join('');
+    } catch (e) {
+        lista.innerHTML = `<div class="modal-empty">Erro ao carregar lista: ${e.message}</div>`;
+    }
+}
+
+function fecharModalProjetos() {
+    document.getElementById('modal-projetos').style.display = 'none';
+}
+
+async function carregarProjeto(nome) {
+    fecharModalProjetos();
+    try {
+        const res = await fetch(`/api/projetos/${encodeURIComponent(nome)}`);
+        if (!res.ok) { alert('Projeto não encontrado.'); return; }
+        const data = await res.json();
+        populateForm(data);
+        _projetoAtual = nome; // Guarda o nome ativo do projeto atual para pré-seleção
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (e) {
+        alert(`Erro ao carregar projeto: ${e.message}`);
+    }
+}
+
+function populateForm(data) {
+    // Campos simples
+    const campos = [
+        'codigo_uc','titular','classe','cpf_cnpj','logradouro','numero','bairro',
+        'cidade','uf','cep','email','telefone','celular',
+        'potencia_instalada_kw','tensao_atendimento_v','tipo_conexao','tipo_ramal',
+        'tipo_fonte','modalidade','potencia_geracao_kwp','tipo_fsa','previsao_mes','previsao_ano',
+        'disjuntor_geral_a','potencia_max_disponivel_kw','demanda_contratada_kw','fator_potencia',
+        'num_fases','cabos_por_fase','bitola_fase_mm2','bitola_neutro_mm2','bitola_terra_mm2',
+        'fuso','coord_x_long','coord_y_lat',
+        'resp_nome','resp_telefone','resp_email',
+    ];
+    campos.forEach(id => {
+        if (data[id] !== undefined) setVal(id, data[id]);
+    });
+
+    // Selects precisam de .value direto
+    ['classe','tensao_atendimento_v','tipo_conexao','tipo_ramal','tipo_fonte',
+     'modalidade','tipo_fsa','previsao_mes','uf'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && data[id] !== undefined) el.value = data[id];
+    });
+    autoFases();
+
+    // Radio: tem_ucs
+    const temUcs = data._tem_ucs || (data.ucs_beneficiarias?.length > 0 ? 'S' : 'N');
+    const radioUcs = document.querySelector(`input[name="tem_ucs"][value="${temUcs}"]`);
+    if (radioUcs) { radioUcs.checked = true; toggleUCs(); }
+
+    // Radio: modo_carga — força modo manual ao carregar
+    const radioManual = document.querySelector('input[name="modo_carga"][value="M"]');
+    if (radioManual) { radioManual.checked = true; toggleModoCarga(); }
+
+    // Tabela painéis
+    document.getElementById('paineis-body').innerHTML = '';
+    (data.paineis || []).forEach(p => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" class="p-qty" value="${p.quantidade||0}" style="width:60px"></td>
+            <td><input class="p-fab" value="${p.fabricante||''}" list="dl-painel-fab" oninput="onPainelFabChange(this)"></td>
+            <td><input class="p-mod" value="${p.modelo||''}" list="dl-painel-mod"></td>
+            <td><input type="number" class="p-area" step="0.01" value="${p.area_m2||0}"></td>
+            <td><input type="number" class="p-pot" step="0.001" value="${p.potencia_kw||0}"></td>
+            <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">&times;</button></td>`;
+        document.getElementById('paineis-body').appendChild(row);
+    });
+
+    // Tabela inversores
+    document.getElementById('inversores-body').innerHTML = '';
+    (data.inversores || []).forEach(inv => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" class="i-qty" value="${inv.quantidade||0}" style="width:60px"></td>
+            <td><input class="i-fab" value="${inv.fabricante||''}" list="dl-inversor-fab" oninput="onInversorFabChange(this)"></td>
+            <td><input class="i-mod" value="${inv.modelo||''}" list="dl-inversor-mod"></td>
+            <td><input type="number" class="i-pot" step="0.1" value="${inv.potencia_kw||0}"></td>
+            <td><input type="number" class="i-ten" step="1" value="${inv.tensao_nominal_v||0}"></td>
+            <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">&times;</button></td>`;
+        document.getElementById('inversores-body').appendChild(row);
+    });
+
+    // Tabela carga instalada
+    document.getElementById('carga-body').innerHTML = '';
+    (data.carga_instalada || []).forEach(c => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" class="c-qty" value="${c.quantidade||0}" style="width:60px"></td>
+            <td><input class="c-equip" value="${c.equipamento||''}"></td>
+            <td><input type="number" class="c-pot" step="1" value="${c.potencia_w||0}"></td>
+            <td><input type="number" class="c-fator" step="0.01" min="0" max="1" value="${c.fator_demanda||1}"></td>
+            <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">&times;</button></td>`;
+        document.getElementById('carga-body').appendChild(row);
+    });
+
+    // Tabela UCs beneficiárias
+    document.getElementById('ucs-body').innerHTML = '';
+    (data.ucs_beneficiarias || []).forEach(uc => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input class="uc-cod" value="${uc.codigo_uc||''}"></td>
+            <td><input class="uc-tit" value="${uc.titular||''}"></td>
+            <td><input class="uc-cpf" value="${uc.cpf_cnpj||''}" placeholder="somente dígitos"></td>
+            <td><input class="uc-end" value="${uc.endereco||''}"></td>
+            <td><input type="number" class="uc-pct" step="0.01" min="0" max="100" value="${uc.percentual||0}" placeholder="%"></td>
+            <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">&times;</button></td>`;
+        document.getElementById('ucs-body').appendChild(row);
+    });
+}
+
+// Carregar ao iniciar a página
+document.addEventListener('DOMContentLoaded', carregarEquipamentos);
+</script>
+</body>
+</html>

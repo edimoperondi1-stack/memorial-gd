@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx get-shit-done-cc@latest)",
+      "Skill(gsd:execute-phase)",
+      "Skill(gsd:execute-phase:*)",
+      "Skill(gsd:plan-phase)",
+      "Skill(gsd:plan-phase:*)",
+      "Bash(python -c \":*)",
+      "Skill(gsd:do)",
+      "Skill(gsd:do:*)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" roadmap get-phase \"6\")",
+      "WebSearch",
+      "WebFetch(domain:render.com)",
+      "WebFetch(domain:fly.io)",
+      "WebFetch(domain:www.freetiers.com)",
+      "WebFetch(domain:docs.github.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.railway.com)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" roadmap get-phase \"6\" --pick section)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:community.render.com)",
+      "WebFetch(domain:render.discourse.group)",
+      "Bash(grep -l \"## Validation Architecture\" \".planning/phases/06-github-e-deploy-em-nuvem/\"*-RESEARCH.md)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" frontmatter validate \".planning/phases/06-github-e-deploy-em-nuvem/06-01-PLAN.md\" --schema plan)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" verify plan-structure \".planning/phases/06-github-e-deploy-em-nuvem/06-01-PLAN.md\")",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" verify plan-structure \".planning/phases/06-github-e-deploy-em-nuvem/06-02-PLAN.md\")",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs\\(06\\): create phase plan for GitHub and HF Spaces deploy\" --files .planning/phases/06-github-e-deploy-em-nuvem/06-01-PLAN.md .planning/phases/06-github-e-deploy-em-nuvem/06-02-PLAN.md .planning/ROADMAP.md)",
+      "Bash(node \"$HOME/.claude/get-shit-done/bin/gsd-tools.cjs\" verify key-links \".planning/phases/06-github-e-deploy-em-nuvem/06-02-PLAN.md\")"
+    ]
+  }
+}

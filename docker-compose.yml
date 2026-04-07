@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  memorial-gd:
+    build: .
+    container_name: memorial-gd
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    volumes:
+      # Persistir base de equipamentos e arquivos gerados entre reinicializações
+      - ./data/equipamentos.json:/app/pipeline/api/equipamentos.json
+      - ./data/output:/app/pipeline/api/output
+    environment:
+      - PYTHONUNBUFFERED=1
