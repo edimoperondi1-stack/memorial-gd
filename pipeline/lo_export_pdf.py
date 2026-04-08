@@ -83,6 +83,34 @@ Sub ExportPDF()
         End If
     Next i
 
+    ' Corrigir escala de pagina para abas que podem transbordar horizontalmente no Linux
+    ' RELACAO DE CARGA: template usa scale=70% que e suficiente no Windows mas nao no Linux
+    ' Solucao: forcar ScaleToPagesX=1 (cabe em 1 pagina de largura) para essa aba
+    Dim oPageStyles As Object
+    oPageStyles = oDoc.getStyleFamilies().getByName("PageStyles")
+    Dim nSheetsNow As Long
+    nSheetsNow = oSheets.getCount()
+    Dim iS As Long
+    For iS = 0 To nSheetsNow - 1
+        Dim oSh As Object
+        oSh = oSheets.getByIndex(iS)
+        Dim sShName As String
+        sShName = oSh.getName()
+        ' Aplicar apenas nas abas que sao conhecidas por ter problema de largura
+        If sShName = "RELACAO DE CARGA" Or sShName = "FORMULARIO" Then
+            Dim sPSName As String
+            sPSName = oSh.PageStyle
+            If oPageStyles.hasByName(sPSName) Then
+                Dim oPS As Object
+                oPS = oPageStyles.getByName(sPSName)
+                ' Mudar para modo "ajustar largura" (1 pagina de largura, altura livre)
+                oPS.Scale = 0
+                oPS.ScaleToPagesX = 1
+                oPS.ScaleToPagesY = 0
+            End If
+        End If
+    Next iS
+
     ' Exportar para PDF
     Dim aArgs(1) As New com.sun.star.beans.PropertyValue
     aArgs(0).Name = "FilterName"
