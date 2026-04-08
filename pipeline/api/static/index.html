@@ -856,11 +856,11 @@
             </tr></thead>
             <tbody id="paineis-body">
                 <tr>
-                    <td><input type="number" class="p-qty" value="12" style="width:60px"></td>
-                    <td><input class="p-fab" value="CANADIAN SOLAR" list="dl-painel-fab" oninput="onPainelFabChange(this)"></td>
-                    <td><input class="p-mod" value="CS3N-550MS" list="dl-painel-mod"></td>
-                    <td><input type="number" class="p-area" step="0.01" value="2.78"></td>
-                    <td><input type="number" class="p-pot" step="0.001" value="0.55"></td>
+                    <td><input type="number" class="p-qty" value="1" style="width:60px"></td>
+                    <td><input class="p-fab" value="" placeholder="Fabricante" list="dl-painel-fab" oninput="onPainelFabChange(this)"></td>
+                    <td><input class="p-mod" value="" placeholder="Modelo" list="dl-painel-mod"></td>
+                    <td><input type="number" class="p-area" step="0.01" value="" placeholder="m²"></td>
+                    <td><input type="number" class="p-pot" step="0.001" value="" placeholder="kW"></td>
                     <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>
                 </tr>
             </tbody>
@@ -883,9 +883,9 @@
             <tbody id="inversores-body">
                 <tr>
                     <td><input type="number" class="i-qty" value="1" style="width:60px"></td>
-                    <td><input class="i-fab" value="GROWATT" list="dl-inversor-fab" oninput="onInversorFabChange(this)"></td>
-                    <td><input class="i-mod" value="MIC 6000TL-X" list="dl-inversor-mod"></td>
-                    <td><input type="number" class="i-pot" step="0.1" value="6.0"></td>
+                    <td><input class="i-fab" value="" placeholder="Fabricante" list="dl-inversor-fab" oninput="onInversorFabChange(this)"></td>
+                    <td><input class="i-mod" value="" placeholder="Modelo" list="dl-inversor-mod"></td>
+                    <td><input type="number" class="i-pot" step="0.1" value="" placeholder="kW"></td>
                     <td><input type="number" class="i-ten" step="1" value="220"></td>
                     <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>
                 </tr>
@@ -1557,28 +1557,28 @@ function preencherDados() {
     setVal('bitola_terra_mm2', '10');
 
     document.getElementById('paineis-body').innerHTML = '';
-    const paineis = [[12, 'CANADIAN SOLAR', 'CS3N-550MS', 2.78, 0.55]];
+    const paineis = [[1, '', '', '', '']];
     paineis.forEach(([qty, fab, mod, area, pot]) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><input type="number" class="p-qty" value="${qty}" style="width:60px"></td>
-            <td><input class="p-fab" value="${fab}" list="dl-painel-fab" oninput="onPainelFabChange(this)"></td>
-            <td><input class="p-mod" value="${mod}" list="dl-painel-mod"></td>
-            <td><input type="number" class="p-area" step="0.01" value="${area}"></td>
-            <td><input type="number" class="p-pot" step="0.001" value="${pot}"></td>
+            <td><input class="p-fab" value="${fab}" placeholder="Fabricante" list="dl-painel-fab" oninput="onPainelFabChange(this)"></td>
+            <td><input class="p-mod" value="${mod}" placeholder="Modelo" list="dl-painel-mod"></td>
+            <td><input type="number" class="p-area" step="0.01" value="${area}" placeholder="m²"></td>
+            <td><input type="number" class="p-pot" step="0.001" value="${pot}" placeholder="kW"></td>
             <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
         document.getElementById('paineis-body').appendChild(row);
     });
 
     document.getElementById('inversores-body').innerHTML = '';
-    const inversores = [[1, 'GROWATT', 'MIC 6000TL-X', 6.0, 220]];
+    const inversores = [[1, '', '', '', 220]];
     inversores.forEach(([qty, fab, mod, pot, ten]) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><input type="number" class="i-qty" value="${qty}" style="width:60px"></td>
-            <td><input class="i-fab" value="${fab}" list="dl-inversor-fab" oninput="onInversorFabChange(this)"></td>
-            <td><input class="i-mod" value="${mod}" list="dl-inversor-mod"></td>
-            <td><input type="number" class="i-pot" step="0.1" value="${pot}"></td>
+            <td><input class="i-fab" value="${fab}" placeholder="Fabricante" list="dl-inversor-fab" oninput="onInversorFabChange(this)"></td>
+            <td><input class="i-mod" value="${mod}" placeholder="Modelo" list="dl-inversor-mod"></td>
+            <td><input type="number" class="i-pot" step="0.1" value="${pot}" placeholder="kW"></td>
             <td><input type="number" class="i-ten" step="1" value="${ten}"></td>
             <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
         document.getElementById('inversores-body').appendChild(row);
