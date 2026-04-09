@@ -33,8 +33,8 @@ from pathlib import Path
 # Calibrado para a renderização do LibreOffice (que comprime ~16% verticalmente vs Excel)
 # --- Esquema Unifilar ---
 DIAGRAMA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_unifilar.png")
-DIAGRAMA_POS_X = 264       # Posição horizontal (pts) — -4 esquerda (268→264)
-DIAGRAMA_POS_Y = 347       # Posição vertical (pts) — +4 pra cima (343→347)
+DIAGRAMA_POS_X = 270       # Posição horizontal (pts) — +6 direita (264→270)
+DIAGRAMA_POS_Y = 347       # Posição vertical (pts) — mantido
 DIAGRAMA_WIDTH = 385       # Largura (pts)
 DIAGRAMA_HEIGHT = 197      # Altura (pts)
 
@@ -42,10 +42,10 @@ DIAGRAMA_HEIGHT = 197      # Altura (pts)
 PLACA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_original.png")
 # Crop em pixels para remover as anotações de dimensão (setas azuis, cotas):
 PLACA_CROP = (75, 65, 510, 348)   # (left, top, right, bottom) — captura só a placa CUIDADO
-PLACA_POS_X = 230          # Posição horizontal (pts) — +20 direita (210→230) pra não sobrepor texto
-PLACA_POS_Y = 250          # Posição vertical (pts) — +5 pra cima (245→250)
-PLACA_WIDTH = 80           # Largura (pts) — reduzido de 85
-PLACA_HEIGHT = 50          # Altura (pts) — reduzido de 55
+PLACA_POS_X = 215          # Posição horizontal (pts) — -15 esquerda (230→215)
+PLACA_POS_Y = 240          # Posição vertical (pts) — -10 pra baixo (250→240)
+PLACA_WIDTH = 80           # Largura (pts)
+PLACA_HEIGHT = 50          # Altura (pts)
 
 # Mapeamento tipo_fsa → abas do PDF (sem UC BENEFICIARIAS)
 ABAS_PDF = {
