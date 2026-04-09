@@ -234,10 +234,16 @@ def gerar_pdf(
     print(f"  [step4] OK — PDF gerado: {nome_pdf} ({tamanho:,} bytes)")
     return caminho_pdf
 
-def _preparar_imagem_transparente(img_path: str, crop_box=None) -> str:
+def _preparar_imagem_transparente(img_path: str, crop_box=None, line_alpha: int = 255) -> str:
     """
-    Abre uma imagem PNG, aplica crop opcional e torna pixels brancos/quase-brancos
-    transparentes (alpha=0). Salva em arquivo temporário e retorna seu caminho.
+    Abre uma imagem PNG, aplica crop opcional, torna pixels brancos/quase-brancos
+    transparentes (alpha=0) e define alpha dos pixels restantes (linhas/formas).
+
+    Args:
+        img_path: caminho da imagem PNG.
+        crop_box: (left, top, right, bottom) para recortar.
+        line_alpha: alpha para pixels não-brancos (0=invisível, 255=opaco).
+                    Use ~100-130 para semi-transparente.
     """
     import tempfile
     import numpy as np
@@ -249,6 +255,10 @@ def _preparar_imagem_transparente(img_path: str, crop_box=None) -> str:
     arr = np.array(img)
     white_mask = (arr[:, :, 0] > 240) & (arr[:, :, 1] > 240) & (arr[:, :, 2] > 240)
     arr[white_mask, 3] = 0
+    # Pixels não-brancos: aplicar alpha especificado (semi-transparente)
+    if line_alpha < 255:
+        non_white = ~white_mask
+        arr[non_white, 3] = np.minimum(arr[non_white, 3], line_alpha)
     processed = Image.fromarray(arr)
     tmp = tempfile.mktemp(suffix=".png")
     processed.save(tmp)
@@ -269,9 +279,10 @@ def _aplicar_diagrama_fundo(caminho_pdf: str):
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import landscape, A4
 
-    # Pré-processar imagens (branco → transparente)
-    tmp_diagrama = _preparar_imagem_transparente(DIAGRAMA_IMG_PATH)
-    tmp_placa    = _preparar_imagem_transparente(PLACA_IMG_PATH, crop_box=PLACA_CROP)
+    # Pré-processar imagens (branco → transparente, linhas semi-transparentes)
+    # line_alpha=110 → ~43% opacidade — diagrama visível mas não esconde o texto
+    tmp_diagrama = _preparar_imagem_transparente(DIAGRAMA_IMG_PATH, line_alpha=110)
+    tmp_placa    = _preparar_imagem_transparente(PLACA_IMG_PATH, crop_box=PLACA_CROP, line_alpha=140)
 
     try:
         # Criar PDF 1-página em memória com diagrama + placa sobrepostos
@@ -308,15 +319,11 @@ def _aplicar_diagrama_fundo(caminho_pdf: str):
         total_pages = len(original_pdf.pages)
         for i in range(total_pages):
             page = original_pdf.pages[i]
-            # Última página = DU-SOLAR: mescla overlay como FUNDO (background)
-            # watermark.merge_page(original) → texto do LO desenhado POR CIMA do diagrama
+            # Última página = DU-SOLAR: mescla overlay semi-transparente POR CIMA
+            # As linhas do diagrama têm alpha ~43%, então o texto por baixo é legível
             if i == total_pages - 1:
-                # Ler watermark fresco (evita contaminação de referências)
-                bg_reader = PdfReader(io.BytesIO(packet.getvalue()))
-                bg_page = bg_reader.pages[0]
-                # Merge: conteúdo original POR CIMA do background (diagrama)
-                bg_page.merge_page(page)
-                writer.add_page(bg_page)
+                page.merge_page(watermark_page)
+                writer.add_page(page)
             else:
                 writer.add_page(page)
 
