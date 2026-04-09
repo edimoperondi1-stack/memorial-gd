@@ -21,10 +21,12 @@ Abas por tipo:
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 # PDF Watermark configurations (USER ADJUSTABLE)
@@ -50,6 +52,77 @@ ABAS_PDF = {
     "FSA MICRO <=10": ["FSA MICRO <=10", "RELACAO DE CARGA", "FORMULARIO", "MD-SOLAR", "DU-SOLAR"],
     "FSA MICRO >10":  ["FSA MICRO >10",  "RELACAO DE CARGA", "FORMULARIO", "MD-SOLAR", "DU-SOLAR"],
 }
+
+
+def _patch_fit_to_width(caminho_xlsx: str, nomes_abas: list) -> None:
+    """
+    Corrige o page setup das abas especificadas via patch direto no XML do XLSX,
+    definindo fitToWidth="1" e removendo scale manual.
+
+    No Linux, o LibreOffice renderiza margens/fontes ligeiramente diferentes do
+    Windows, fazendo com que scale fixo (ex: 70%) não caiba na largura de uma página.
+    fitToWidth="1" garante que sempre caberá independente da plataforma.
+
+    Não usa openpyxl (preserva drawings/shapes restaurados anteriormente).
+    """
+    tmp = caminho_xlsx + ".fitw.tmp"
+    try:
+        # Resolver rid → target para as abas
+        with zipfile.ZipFile(caminho_xlsx, "r") as zin:
+            wb_xml  = zin.read("xl/workbook.xml").decode("utf-8")
+            rels_xml = zin.read("xl/_rels/workbook.xml.rels").decode("utf-8")
+
+        rid_to_target = {}
+        for m in re.finditer(r'<Relationship\b([^>]+)>', rels_xml):
+            tag = m.group(1)
+            id_m  = re.search(r'Id="(rId\d+)"', tag)
+            tgt_m = re.search(r'Target="([^"]+)"', tag)
+            if id_m and tgt_m:
+                rid_to_target[id_m.group(1)] = tgt_m.group(1)
+
+        # Mapear nome da aba → caminho XML no zip
+        aba_para_xml = {}
+        for nome in nomes_abas:
+            escaped = re.escape(nome)
+            m = re.search(rf'<sheet\b[^>]*\bname="{escaped}"[^>]*\br:id="(rId\d+)"', wb_xml)
+            if m:
+                target = rid_to_target.get(m.group(1), "")
+                if target:
+                    aba_para_xml[nome] = f"xl/{target}"
+
+        if not aba_para_xml:
+            return  # nenhuma aba encontrada, nada a fazer
+
+        targets_para_corrigir = set(aba_para_xml.values())
+
+        with zipfile.ZipFile(caminho_xlsx, "r") as zin:
+            with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as zout:
+                for item in zin.infolist():
+                    data = zin.read(item.filename)
+                    if item.filename in targets_para_corrigir:
+                        xml = data.decode("utf-8")
+                        # 1. Remover atributos scale, fitToWidth, fitToHeight existentes no pageSetup
+                        xml = re.sub(r'\s+scale="\d+"', '', xml)
+                        xml = re.sub(r'\s+fitToWidth="\d+"', '', xml)
+                        xml = re.sub(r'\s+fitToHeight="\d+"', '', xml)
+                        # 2. Adicionar fitToWidth="1" fitToHeight="0" no elemento <pageSetup>
+                        xml = re.sub(
+                            r'(<pageSetup\b)',
+                            r'\1 fitToWidth="1" fitToHeight="0"',
+                            xml
+                        )
+                        # 3. Garantir que <sheetPr> tem fitToPage="1" (ativa modo fit-to-pages no Excel/LO)
+                        if '<sheetPr' in xml:
+                            # Adicionar fitToPage se ainda não existe
+                            if 'fitToPage' not in xml:
+                                xml = re.sub(r'(<sheetPr\b)', r'\1 fitToPage="1"', xml, count=1)
+                        data = xml.encode("utf-8")
+                    zout.writestr(item, data)
+
+        Path(tmp).replace(caminho_xlsx)
+    except Exception as e:
+        Path(tmp).unlink(missing_ok=True)
+        print(f"  [step4] AVISO: falha ao aplicar patch fitToWidth: {e}")
 
 
 def _tem_ucs_beneficiarias(caminho_xlsx: str) -> bool:
@@ -120,6 +193,11 @@ def gerar_pdf(
         abas_converter=abas,
     )
     print(f"  [step4] Fórmulas convertidas em valores nas abas do PDF.")
+
+    # Corrigir page setup de abas que transbordam horizontalmente no Linux
+    # (LibreOffice Linux renderiza diferente do Windows; scale=70% pode não caber)
+    _patch_fit_to_width(tmp_xlsx, ["RELACAO DE CARGA", "FORMULARIO"])
+    print(f"  [step4] Page setup corrigido (fitToWidth) para RELACAO DE CARGA / FORMULARIO.")
 
     # Nome do PDF
     nome_pdf = f"{nome_titular.upper().strip()}_UC_{codigo_uc}.pdf"
