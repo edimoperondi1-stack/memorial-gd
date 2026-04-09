@@ -218,14 +218,17 @@ def gerar_pdf(
         raise RuntimeError(f"Falha ao gerar PDF: {resultado.get('error', 'desconhecido')}")
 
     # ==============================================================
-    # SUPER PALLIATIVE OVERLAY: Injetar diagrama estático no fundo
+    # OVERLAY DESABILITADO: restaurar_drawings já restaura os DrawingML
+    # do template e o LibreOffice renderiza nativamente. O overlay
+    # causava dupla renderização (diagrama/placa apareciam grandes demais
+    # e cobriam os valores das células no diagrama unifilar).
     # ==============================================================
-    if "DU-SOLAR" in abas and os.path.exists(DIAGRAMA_IMG_PATH):
-        try:
-            print("  [step4] Aplicando imagem do Esquema Unifilar no fundo do PDF...")
-            _aplicar_diagrama_fundo(caminho_pdf)
-        except Exception as e:
-            print(f"  [step4] AVISO: Falha ao aplicar diagrama no fundo: {e}")
+    # if "DU-SOLAR" in abas and os.path.exists(DIAGRAMA_IMG_PATH):
+    #     try:
+    #         print("  [step4] Aplicando imagem do Esquema Unifilar no fundo do PDF...")
+    #         _aplicar_diagrama_fundo(caminho_pdf)
+    #     except Exception as e:
+    #         print(f"  [step4] AVISO: Falha ao aplicar diagrama no fundo: {e}")
 
     tamanho = os.path.getsize(caminho_pdf)
     print(f"  [step4] OK — PDF gerado: {nome_pdf} ({tamanho:,} bytes)")
