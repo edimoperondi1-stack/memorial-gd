@@ -33,8 +33,8 @@ from pathlib import Path
 # Calibrado para a renderização do LibreOffice (que comprime ~16% verticalmente vs Excel)
 # --- Esquema Unifilar ---
 DIAGRAMA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_unifilar.png")
-DIAGRAMA_POS_X = 268       # Posição horizontal (pts) — +6 direita (262→268)
-DIAGRAMA_POS_Y = 343       # Posição vertical (pts) — +7 pra cima (336→343)
+DIAGRAMA_POS_X = 264       # Posição horizontal (pts) — -4 esquerda (268→264)
+DIAGRAMA_POS_Y = 347       # Posição vertical (pts) — +4 pra cima (343→347)
 DIAGRAMA_WIDTH = 385       # Largura (pts)
 DIAGRAMA_HEIGHT = 197      # Altura (pts)
 
