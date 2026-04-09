@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memorial GD — Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-box {
+      background: #16213e;
+      border: 1px solid #e67e22;
+      border-radius: 12px;
+      padding: 40px 48px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo h1 {
+      color: #e67e22;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .logo p {
+      color: #aaa;
+      font-size: 0.85rem;
+      margin-top: 6px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      color: #ccc;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0f3460;
+      border: 1px solid #334;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input:focus {
+      border-color: #e67e22;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: #e67e22;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-login:hover { background: #cf6d17; }
+    .btn-login:disabled { background: #666; cursor: not-allowed; }
+
+    .error-msg {
+      display: none;
+      background: rgba(231, 76, 60, 0.15);
+      border: 1px solid #e74c3c;
+      color: #e74c3c;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    .error-msg.visible { display: block; }
+
+    .footer {
+      text-align: center;
+      margin-top: 28px;
+      color: #555;
+      font-size: 0.78rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <div class="logo">
+      <h1>⚡ Memorial GD</h1>
+      <p>Sistema de Geração Distribuída Solar</p>
+    </div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="usuario">Usuário</label>
+        <input type="text" id="usuario" name="usuario" placeholder="Digite seu usuário" autocomplete="username" required>
+      </div>
+      <div class="form-group">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" name="senha" placeholder="Digite sua senha" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn-login" id="btnLogin">Entrar</button>
+      <div class="error-msg" id="erroMsg">Usuário ou senha inválidos.</div>
+    </form>
+
+    <div class="footer">Memorial GD Solar &copy; 2026</div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnLogin');
+      const erro = document.getElementById('erroMsg');
+      erro.classList.remove('visible');
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
+      const usuario = document.getElementById('usuario').value.trim();
+      const senha = document.getElementById('senha').value;
+
+      try {
+        const resp = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuario, senha }),
+          credentials: 'include',
+        });
+        const data = await resp.json();
+        if (resp.ok && data.ok) {
+          window.location.href = '/';
+        } else {
+          erro.textContent = data.error || 'Usuário ou senha inválidos.';
+          erro.classList.add('visible');
+        }
+      } catch (err) {
+        erro.textContent = 'Erro de conexão. Tente novamente.';
+        erro.classList.add('visible');
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Entrar';
+    });
+
+    // Enter no campo usuário foca na senha
+    document.getElementById('usuario').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') document.getElementById('senha').focus();
+    });
+  </script>
+</body>
+</html>

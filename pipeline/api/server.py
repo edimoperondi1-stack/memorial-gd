@@ -16,8 +16,10 @@ Uso:
   # Default: porta 8080
 """
 
+import hashlib
 import json
 import os
+import secrets
 import shutil
 import sys
 
@@ -71,6 +73,70 @@ _equip_lock = threading.Lock()
 # Diretório para projetos salvos
 PROJETOS_DIR = Path(__file__).parent / "projetos_salvos"
 PROJETOS_DIR.mkdir(exist_ok=True)
+
+# ── Autenticação ─────────────────────────────────────────────────────────────
+USERS_PATH = Path(__file__).parent / "users.json"
+SESSION_COOKIE = "memorial_session"
+SESSION_DURATION = 8 * 3600  # 8 horas em segundos
+
+# Sessões em memória: {token: {"usuario": str, "expira": float}}
+_sessions: dict = {}
+_sessions_lock = threading.Lock()
+
+
+def _hash_senha(senha: str) -> str:
+    return hashlib.sha256(senha.encode("utf-8")).hexdigest()
+
+
+def _carregar_usuarios() -> dict:
+    if USERS_PATH.exists():
+        try:
+            with open(USERS_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            pass
+    # Criar arquivo padrão se não existir
+    padrao = {"admin": {"senha_hash": _hash_senha("memorial2026"), "nome": "Administrador"}}
+    _salvar_usuarios(padrao)
+    print("  [auth] users.json criado com usuário padrão: admin / memorial2026")
+    return padrao
+
+
+def _salvar_usuarios(users: dict):
+    with open(USERS_PATH, "w", encoding="utf-8") as f:
+        json.dump(users, f, ensure_ascii=False, indent=2)
+
+
+def _criar_sessao(usuario: str) -> str:
+    token = secrets.token_hex(32)
+    with _sessions_lock:
+        _sessions[token] = {"usuario": usuario, "expira": time.time() + SESSION_DURATION}
+    return token
+
+
+def _verificar_sessao(token: str) -> str | None:
+    """Retorna o nome do usuário se a sessão for válida, None caso contrário."""
+    with _sessions_lock:
+        sess = _sessions.get(token)
+        if sess and time.time() < sess["expira"]:
+            return sess["usuario"]
+        if sess:
+            del _sessions[token]
+    return None
+
+
+def _get_token_do_cookie(handler) -> str | None:
+    cookie_header = handler.headers.get("Cookie", "")
+    for parte in cookie_header.split(";"):
+        parte = parte.strip()
+        if parte.startswith(SESSION_COOKIE + "="):
+            return parte[len(SESSION_COOKIE) + 1:]
+    return None
+
+
+def _rota_publica(path: str) -> bool:
+    """Rotas que não requerem autenticação."""
+    return path in ("/login", "/api/login") or path.startswith("/static/")
 
 
 def _carregar_equipamentos() -> dict:
@@ -150,7 +216,24 @@ class APIHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = unquote(parsed.path)
 
-        if path == "/" or path == "":
+        # ── Verificar autenticação ────────────────────────────────────
+        if not _rota_publica(path):
+            token = _get_token_do_cookie(self)
+            usuario = _verificar_sessao(token) if token else None
+            if not usuario:
+                # API → 401; página → redireciona para /login
+                if path.startswith("/api/"):
+                    self._json_response(401, {"error": "Não autenticado"})
+                else:
+                    self.send_response(302)
+                    self.send_header("Location", "/login")
+                    self.end_headers()
+                return
+
+        if path == "/login":
+            self._serve_file(STATIC_DIR / "login.html", "text/html")
+
+        elif path == "/" or path == "":
             self._serve_file(STATIC_DIR / "index.html", "text/html")
 
         elif path.startswith("/static/"):
@@ -189,6 +272,9 @@ class APIHandler(SimpleHTTPRequestHandler):
         elif path == "/api/status":
             self._json_response(200, {"status": "ok", "pipeline": "ready"})
 
+        elif path == "/api/admin/usuarios":
+            self._handle_listar_usuarios()
+
         elif path == "/api/debug":
             self._handle_debug()
 
@@ -224,12 +310,137 @@ class APIHandler(SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/")
 
-        if path == "/api/gerar":
+        # ── Verificar autenticação (exceto /api/login) ────────────────
+        if not _rota_publica(path):
+            token = _get_token_do_cookie(self)
+            usuario = _verificar_sessao(token) if token else None
+            if not usuario:
+                self._json_response(401, {"error": "Não autenticado"})
+                return
+
+        if path == "/api/login":
+            self._handle_login()
+        elif path == "/api/logout":
+            self._handle_logout()
+        elif path == "/api/gerar":
             self._handle_gerar()
         elif path == "/api/projetos":
             self._handle_salvar_projeto()
+        elif path == "/api/admin/usuarios":
+            self._handle_admin_usuarios()
+        elif path == "/api/admin/usuarios/remover":
+            self._handle_remover_usuario()
         else:
             self._json_response(404, {"error": f"Rota POST não encontrada: {path}"})
+
+    def _handle_login(self):
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            payload = json.loads(body.decode("utf-8"))
+            usuario = payload.get("usuario", "").strip()
+            senha = payload.get("senha", "")
+
+            users = _carregar_usuarios()
+            user_data = users.get(usuario)
+            if not user_data or user_data.get("senha_hash") != _hash_senha(senha):
+                self._json_response(401, {"error": "Usuário ou senha inválidos"})
+                return
+
+            token = _criar_sessao(usuario)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header(
+                "Set-Cookie",
+                f"{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={SESSION_DURATION}"
+            )
+            self._cors_headers()
+            body_resp = json.dumps({"ok": True, "usuario": usuario}).encode("utf-8")
+            self.send_header("Content-Length", str(len(body_resp)))
+            self.end_headers()
+            self.wfile.write(body_resp)
+            print(f"  [auth] Login: {usuario}")
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
+
+    def _handle_logout(self):
+        token = _get_token_do_cookie(self)
+        if token:
+            with _sessions_lock:
+                _sessions.pop(token, None)
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header(
+            "Set-Cookie",
+            f"{SESSION_COOKIE}=; Path=/; HttpOnly; Max-Age=0"
+        )
+        self._cors_headers()
+        body_resp = json.dumps({"ok": True}).encode("utf-8")
+        self.send_header("Content-Length", str(len(body_resp)))
+        self.end_headers()
+        self.wfile.write(body_resp)
+
+    def _handle_listar_usuarios(self):
+        users = _carregar_usuarios()
+        lista = [{"usuario": u, "nome": d.get("nome", u)} for u, d in users.items()]
+        self._json_response(200, {"usuarios": lista})
+
+    def _handle_admin_usuarios(self):
+        """POST /api/admin/usuarios — adicionar novo usuário."""
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            payload = json.loads(body.decode("utf-8"))
+            usuario = payload.get("usuario", "").strip()
+            senha = payload.get("senha", "")
+            nome = payload.get("nome", usuario).strip()
+
+            if not usuario or not senha:
+                self._json_response(400, {"error": "Usuário e senha são obrigatórios"})
+                return
+            if len(senha) < 6:
+                self._json_response(400, {"error": "Senha deve ter pelo menos 6 caracteres"})
+                return
+
+            users = _carregar_usuarios()
+            users[usuario] = {"senha_hash": _hash_senha(senha), "nome": nome}
+            _salvar_usuarios(users)
+            print(f"  [auth] Usuário criado: {usuario}")
+            self._json_response(200, {"ok": True, "usuario": usuario})
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
+
+    def _handle_remover_usuario(self):
+        """POST /api/admin/usuarios/remover — remover usuário."""
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(content_length)
+            payload = json.loads(body.decode("utf-8"))
+            usuario = payload.get("usuario", "").strip()
+
+            if not usuario:
+                self._json_response(400, {"error": "Usuário é obrigatório"})
+                return
+
+            users = _carregar_usuarios()
+            if usuario not in users:
+                self._json_response(404, {"error": "Usuário não encontrado"})
+                return
+            if len(users) == 1:
+                self._json_response(400, {"error": "Não é possível remover o único usuário"})
+                return
+
+            del users[usuario]
+            _salvar_usuarios(users)
+            # Invalidar sessões desse usuário
+            with _sessions_lock:
+                to_del = [t for t, s in _sessions.items() if s["usuario"] == usuario]
+                for t in to_del:
+                    del _sessions[t]
+            print(f"  [auth] Usuário removido: {usuario}")
+            self._json_response(200, {"ok": True})
+        except Exception as e:
+            self._json_response(500, {"error": str(e)})
 
     def _handle_gerar(self):
         """Processa o formulário e gera os documentos."""

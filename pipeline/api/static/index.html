@@ -644,8 +644,32 @@
         <button class="btn-demo" onclick="preencherDados()">&#9881; Dados de Exemplo</button>
         <button class="btn-salvar" onclick="abrirModalSalvar()">&#128190; Salvar Projeto</button>
         <button class="btn-carregar" onclick="abrirModalProjetos()">&#128193; Carregar Projeto</button>
+        <button class="btn-demo" onclick="abrirModalUsuarios()" title="Gerenciar Usuários">&#128100; Usuários</button>
+        <button class="btn-demo" onclick="fazerLogout()" title="Sair" style="background:#c0392b; color:#fff; border-color:#c0392b;">&#10148; Sair</button>
     </div>
 </header>
+
+<!-- Modal: Usuários -->
+<div id="modal-usuarios" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalUsuarios()">
+    <div class="modal-box" style="max-width:480px">
+        <div class="modal-header">
+            <span>&#128100; Gerenciar Usuários</span>
+            <button class="modal-close" onclick="fecharModalUsuarios()">&#10005;</button>
+        </div>
+        <div style="padding:1rem 0">
+            <div id="lista-usuarios" style="margin-bottom:1.2rem"></div>
+            <hr style="border-color:#334; margin-bottom:1.2rem">
+            <div style="font-size:0.85rem; color:#e67e22; font-weight:600; margin-bottom:0.6rem">Adicionar Novo Usuário</div>
+            <div style="display:grid; gap:0.5rem">
+                <input type="text" id="novo-usuario" placeholder="Nome de usuário" style="background:#0f3460;color:#fff;border:1px solid #334;border-radius:5px;padding:8px 10px;font-size:0.9rem">
+                <input type="text" id="novo-nome" placeholder="Nome completo (opcional)" style="background:#0f3460;color:#fff;border:1px solid #334;border-radius:5px;padding:8px 10px;font-size:0.9rem">
+                <input type="password" id="nova-senha" placeholder="Senha (mín. 6 caracteres)" style="background:#0f3460;color:#fff;border:1px solid #334;border-radius:5px;padding:8px 10px;font-size:0.9rem">
+                <button class="btn-gerar" style="padding:0.6rem;font-size:0.9rem" onclick="adicionarUsuario()">&#43; Adicionar</button>
+            </div>
+            <div id="usuarios-msg" style="margin-top:0.7rem;font-size:0.85rem;display:none"></div>
+        </div>
+    </div>
+</div>
 
 <!-- Modal: Salvar Projeto -->
 <div id="modal-salvar" class="modal-overlay" style="display:none" onclick="if(event.target===this)fecharModalSalvar()">
@@ -1950,6 +1974,116 @@ function populateForm(data) {
 
 // Carregar ao iniciar a página
 document.addEventListener('DOMContentLoaded', carregarEquipamentos);
+
+// ── Autenticação ──────────────────────────────────────────────────────
+async function fazerLogout() {
+    if (!confirm('Deseja sair?')) return;
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    window.location.href = '/login';
+}
+
+async function abrirModalUsuarios() {
+    document.getElementById('modal-usuarios').style.display = 'flex';
+    await recarregarListaUsuarios();
+}
+
+function fecharModalUsuarios() {
+    document.getElementById('modal-usuarios').style.display = 'none';
+    document.getElementById('usuarios-msg').style.display = 'none';
+}
+
+async function recarregarListaUsuarios() {
+    const lista = document.getElementById('lista-usuarios');
+    lista.innerHTML = '<span style="color:#aaa;font-size:0.85rem">Carregando...</span>';
+    try {
+        const resp = await fetch('/api/admin/usuarios', { credentials: 'include' });
+        const data = await resp.json();
+        if (!data.usuarios || data.usuarios.length === 0) {
+            lista.innerHTML = '<span style="color:#aaa;font-size:0.85rem">Nenhum usuário.</span>';
+            return;
+        }
+        lista.innerHTML = `
+            <div style="font-size:0.85rem;color:#e67e22;font-weight:600;margin-bottom:0.5rem">Usuários cadastrados</div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.88rem">
+                <thead><tr style="color:#aaa">
+                    <th style="text-align:left;padding:4px 6px">Usuário</th>
+                    <th style="text-align:left;padding:4px 6px">Nome</th>
+                    <th></th>
+                </tr></thead>
+                <tbody>
+                ${data.usuarios.map(u => `
+                    <tr style="border-top:1px solid #223">
+                        <td style="padding:6px;color:#fff">${u.usuario}</td>
+                        <td style="padding:6px;color:#ccc">${u.nome}</td>
+                        <td style="padding:6px;text-align:right">
+                            <button onclick="removerUsuario('${u.usuario}')"
+                                style="background:#c0392b;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:0.8rem">
+                                Remover
+                            </button>
+                        </td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>`;
+    } catch(e) {
+        lista.innerHTML = '<span style="color:#e74c3c;font-size:0.85rem">Erro ao carregar usuários.</span>';
+    }
+}
+
+async function adicionarUsuario() {
+    const msg = document.getElementById('usuarios-msg');
+    const usuario = document.getElementById('novo-usuario').value.trim();
+    const nome = document.getElementById('novo-nome').value.trim();
+    const senha = document.getElementById('nova-senha').value;
+
+    if (!usuario || !senha) {
+        msg.style.display = 'block'; msg.style.color = '#e74c3c';
+        msg.textContent = 'Preencha usuário e senha.'; return;
+    }
+
+    try {
+        const resp = await fetch('/api/admin/usuarios', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, nome: nome || usuario, senha }),
+        });
+        const data = await resp.json();
+        if (resp.ok && data.ok) {
+            msg.style.display = 'block'; msg.style.color = '#2ecc71';
+            msg.textContent = `Usuário "${usuario}" criado com sucesso!`;
+            document.getElementById('novo-usuario').value = '';
+            document.getElementById('novo-nome').value = '';
+            document.getElementById('nova-senha').value = '';
+            await recarregarListaUsuarios();
+        } else {
+            msg.style.display = 'block'; msg.style.color = '#e74c3c';
+            msg.textContent = data.error || 'Erro ao criar usuário.';
+        }
+    } catch(e) {
+        msg.style.display = 'block'; msg.style.color = '#e74c3c';
+        msg.textContent = 'Erro de conexão.';
+    }
+}
+
+async function removerUsuario(usuario) {
+    if (!confirm(`Remover o usuário "${usuario}"?`)) return;
+    try {
+        const resp = await fetch('/api/admin/usuarios/remover', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario }),
+        });
+        const data = await resp.json();
+        const msg = document.getElementById('usuarios-msg');
+        if (resp.ok && data.ok) {
+            msg.style.display = 'block'; msg.style.color = '#2ecc71';
+            msg.textContent = `Usuário "${usuario}" removido.`;
+            await recarregarListaUsuarios();
+        } else {
+            msg.style.display = 'block'; msg.style.color = '#e74c3c';
+            msg.textContent = data.error || 'Erro ao remover.';
+        }
+    } catch(e) {}
+}
 </script>
 </body>
 </html>
