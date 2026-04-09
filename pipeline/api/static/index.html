@@ -1487,7 +1487,7 @@ async function gerarDocumentos() {
     try {
         const res = await fetch('/api/gerar', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify(payload),
             signal: controller.signal,
         });
@@ -1653,7 +1653,7 @@ let _equipDB = { paineis: {}, inversores: {} };
 
 async function carregarEquipamentos() {
     try {
-        const res = await fetch('/api/equipamentos');
+        const res = await fetch('/api/equipamentos', { headers: { 'Authorization': 'Bearer ' + getToken() } });
         if (res.ok) {
             _equipDB = await res.json();
             atualizarDatalistFabricantes();
@@ -1772,7 +1772,7 @@ async function abrirModalSalvar() {
     select.innerHTML = '<option value="">Cadeia de projetos...</option>';
 
     try {
-        const res = await fetch('/api/projetos');
+        const res = await fetch('/api/projetos', { headers: { 'Authorization': 'Bearer ' + getToken() } });
         const data = await res.json();
         const projetos = data.projetos || [];
 
@@ -1823,7 +1823,7 @@ async function submeterSalvar(isSobrescrever) {
     try {
         const res = await fetch('/api/projetos', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             body: JSON.stringify(payload),
         });
         const data = await res.json();
@@ -1845,7 +1845,7 @@ async function abrirModalProjetos() {
     lista.innerHTML = '<div class="modal-empty">Carregando...</div>';
 
     try {
-        const res = await fetch('/api/projetos');
+        const res = await fetch('/api/projetos', { headers: { 'Authorization': 'Bearer ' + getToken() } });
         const data = await res.json();
         const projetos = data.projetos || [];
 
@@ -1972,14 +1972,31 @@ function populateForm(data) {
     });
 }
 
-// Carregar ao iniciar a página
-document.addEventListener('DOMContentLoaded', carregarEquipamentos);
+// ── Token de autenticação ─────────────────────────────────────────────
+function getToken() { return localStorage.getItem('memorial_token') || ''; }
+function authHeaders(extra) {
+    return Object.assign({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, extra || {});
+}
+
+// Verificar autenticação ao carregar a página
+document.addEventListener('DOMContentLoaded', async function() {
+    const token = getToken();
+    if (!token) { window.location.replace('/login'); return; }
+    // Verificar se o token ainda é válido
+    try {
+        const resp = await fetch('/api/status', { headers: { 'Authorization': 'Bearer ' + token } });
+        if (resp.status === 401) { localStorage.removeItem('memorial_token'); window.location.replace('/login'); return; }
+    } catch(e) { /* sem conexão, deixa tentar */ }
+    carregarEquipamentos();
+});
 
 // ── Autenticação ──────────────────────────────────────────────────────
 async function fazerLogout() {
     if (!confirm('Deseja sair?')) return;
-    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-    window.location.href = '/login';
+    await fetch('/api/logout', { method: 'POST', headers: { 'Authorization': 'Bearer ' + getToken() } });
+    localStorage.removeItem('memorial_token');
+    localStorage.removeItem('memorial_usuario');
+    window.location.replace('/login');
 }
 
 async function abrirModalUsuarios() {
@@ -1996,7 +2013,7 @@ async function recarregarListaUsuarios() {
     const lista = document.getElementById('lista-usuarios');
     lista.innerHTML = '<span style="color:#aaa;font-size:0.85rem">Carregando...</span>';
     try {
-        const resp = await fetch('/api/admin/usuarios', { credentials: 'include' });
+        const resp = await fetch('/api/admin/usuarios', { headers: { 'Authorization': 'Bearer ' + getToken() } });
         const data = await resp.json();
         if (!data.usuarios || data.usuarios.length === 0) {
             lista.innerHTML = '<span style="color:#aaa;font-size:0.85rem">Nenhum usuário.</span>';
@@ -2042,8 +2059,8 @@ async function adicionarUsuario() {
 
     try {
         const resp = await fetch('/api/admin/usuarios', {
-            method: 'POST', credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            headers: authHeaders(),
             body: JSON.stringify({ usuario, nome: nome || usuario, senha }),
         });
         const data = await resp.json();
@@ -2068,8 +2085,8 @@ async function removerUsuario(usuario) {
     if (!confirm(`Remover o usuário "${usuario}"?`)) return;
     try {
         const resp = await fetch('/api/admin/usuarios/remover', {
-            method: 'POST', credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST',
+            headers: authHeaders(),
             body: JSON.stringify({ usuario }),
         });
         const data = await resp.json();

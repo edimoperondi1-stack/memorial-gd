@@ -125,7 +125,13 @@ def _verificar_sessao(token: str) -> str | None:
     return None
 
 
-def _get_token_do_cookie(handler) -> str | None:
+def _get_token_do_request(handler) -> str | None:
+    """Extrai token do header Authorization (Bearer) OU do cookie (fallback)."""
+    # 1. Header Authorization: Bearer <token>
+    auth = handler.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return auth[7:].strip()
+    # 2. Fallback: cookie (para acesso direto não-iframe)
     cookie_header = handler.headers.get("Cookie", "")
     for parte in cookie_header.split(";"):
         parte = parte.strip()
@@ -218,7 +224,7 @@ class APIHandler(SimpleHTTPRequestHandler):
 
         # ── Verificar autenticação ────────────────────────────────────
         if not _rota_publica(path):
-            token = _get_token_do_cookie(self)
+            token = _get_token_do_request(self)
             usuario = _verificar_sessao(token) if token else None
             if not usuario:
                 # API → 401; página → redireciona para /login
@@ -312,7 +318,7 @@ class APIHandler(SimpleHTTPRequestHandler):
 
         # ── Verificar autenticação (exceto /api/login) ────────────────
         if not _rota_publica(path):
-            token = _get_token_do_cookie(self)
+            token = _get_token_do_request(self)
             usuario = _verificar_sessao(token) if token else None
             if not usuario:
                 self._json_response(401, {"error": "Não autenticado"})
@@ -350,12 +356,14 @@ class APIHandler(SimpleHTTPRequestHandler):
             token = _criar_sessao(usuario)
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
+            # Cookie como fallback (pode ser bloqueado em iframe)
             self.send_header(
                 "Set-Cookie",
-                f"{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={SESSION_DURATION}"
+                f"{SESSION_COOKIE}={token}; Path=/; HttpOnly; SameSite=None; Secure; Max-Age={SESSION_DURATION}"
             )
             self._cors_headers()
-            body_resp = json.dumps({"ok": True, "usuario": usuario}).encode("utf-8")
+            # Token também no JSON para o cliente salvar no localStorage
+            body_resp = json.dumps({"ok": True, "usuario": usuario, "token": token}).encode("utf-8")
             self.send_header("Content-Length", str(len(body_resp)))
             self.end_headers()
             self.wfile.write(body_resp)
@@ -364,7 +372,7 @@ class APIHandler(SimpleHTTPRequestHandler):
             self._json_response(500, {"error": str(e)})
 
     def _handle_logout(self):
-        token = _get_token_do_cookie(self)
+        token = _get_token_do_request(self)
         if token:
             with _sessions_lock:
                 _sessions.pop(token, None)

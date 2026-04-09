@@ -136,6 +136,11 @@
   </div>
 
   <script>
+    // Se já tem sessão válida no localStorage, redireciona direto
+    if (localStorage.getItem('memorial_token')) {
+      window.location.replace('/');
+    }
+
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const btn = document.getElementById('btnLogin');
@@ -152,25 +157,27 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ usuario, senha }),
-          credentials: 'include',
         });
         const data = await resp.json();
         if (resp.ok && data.ok) {
-          window.location.href = '/';
+          // Salvar token no localStorage (funciona em iframe/HuggingFace)
+          localStorage.setItem('memorial_token', data.token);
+          localStorage.setItem('memorial_usuario', data.usuario);
+          window.location.replace('/');
         } else {
           erro.textContent = data.error || 'Usuário ou senha inválidos.';
           erro.classList.add('visible');
+          btn.disabled = false;
+          btn.textContent = 'Entrar';
         }
       } catch (err) {
         erro.textContent = 'Erro de conexão. Tente novamente.';
         erro.classList.add('visible');
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
       }
-
-      btn.disabled = false;
-      btn.textContent = 'Entrar';
     });
 
-    // Enter no campo usuário foca na senha
     document.getElementById('usuario').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') document.getElementById('senha').focus();
     });
