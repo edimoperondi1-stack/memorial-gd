@@ -1661,7 +1661,11 @@ function atualizarDatalistModelos(tipo, fabricante) {
         }
     }
 
-    dl.innerHTML = opcoes.map(m => `<option value="${m}">`).join('');
+    dl.innerHTML = opcoes.map(m => {
+        // m pode ser string ("CS3N-550MS") ou objeto ({modelo: "CS3N-550MS", Voc: ..., ...})
+        const nome = typeof m === 'object' && m !== null ? (m.modelo || '') : String(m);
+        return `<option value="${nome}">`;
+    }).join('');
 }
 
 function onPainelFabChange(input) {
