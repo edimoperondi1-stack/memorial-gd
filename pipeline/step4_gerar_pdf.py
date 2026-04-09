@@ -30,21 +30,22 @@ import zipfile
 from pathlib import Path
 
 # PDF Watermark configurations (USER ADJUSTABLE)
+# Calibrado para a renderização do LibreOffice (que comprime ~16% verticalmente vs Excel)
 # --- Esquema Unifilar ---
 DIAGRAMA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_unifilar.png")
-DIAGRAMA_POS_X = 266       # Posição horizontal (pts) — centralizado no container do pipeline_output.pdf
-DIAGRAMA_POS_Y = 309       # Posição vertical (pts)  — borda inferior do container no pipeline_output.pdf
-DIAGRAMA_WIDTH = 406       # Largura (pts) — mantém proporção 832:481 com altura=235
-DIAGRAMA_HEIGHT = 235      # Altura (pts)  — altura do container no pipeline_output.pdf
+DIAGRAMA_POS_X = 266       # Posição horizontal (pts)
+DIAGRAMA_POS_Y = 339       # Posição vertical (pts) — borda inferior (PDF coords, y=0 no bottom)
+DIAGRAMA_WIDTH = 385       # Largura (pts) — reduzido ~5% do original (406)
+DIAGRAMA_HEIGHT = 197      # Altura (pts)  — comprimido ~84% do original (235) para alinhar com LO
 
 # --- Placa de Advertência (CUIDADO / Risco de Choque) ---
 PLACA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_original.png")
 # Crop em pixels para remover as anotações de dimensão (setas azuis, cotas):
 PLACA_CROP = (75, 65, 510, 348)   # (left, top, right, bottom) — captura só a placa CUIDADO
-PLACA_POS_X = 219          # Posição horizontal (pts) — borda esq. do clip rect no pipeline_output.pdf
-PLACA_POS_Y = 251          # Posição vertical (pts)  — borda inf. do clip rect no pipeline_output.pdf
-PLACA_WIDTH = 104          # Largura (pts) — largura do clip rect (103.927) no pipeline_output.pdf
-PLACA_HEIGHT = 68          # Altura (pts)  — mantém proporção do crop 435x283 (104/1.537≈68)
+PLACA_POS_X = 175          # Posição horizontal (pts) — ajustado para LO
+PLACA_POS_Y = 220          # Posição vertical (pts)  — ajustado para LO
+PLACA_WIDTH = 85           # Largura (pts) — reduzido do original (104)
+PLACA_HEIGHT = 55          # Altura (pts)  — reduzido do original (68)
 
 # Mapeamento tipo_fsa → abas do PDF (sem UC BENEFICIARIAS)
 ABAS_PDF = {
@@ -279,10 +280,10 @@ def _aplicar_diagrama_fundo(caminho_pdf: str):
     from reportlab.pdfgen import canvas
     from reportlab.lib.pagesizes import landscape, A4
 
-    # Pré-processar imagens (branco → transparente, linhas semi-transparentes)
-    # line_alpha=110 → ~43% opacidade — diagrama visível mas não esconde o texto
-    tmp_diagrama = _preparar_imagem_transparente(DIAGRAMA_IMG_PATH, line_alpha=110)
-    tmp_placa    = _preparar_imagem_transparente(PLACA_IMG_PATH, crop_box=PLACA_CROP, line_alpha=140)
+    # Pré-processar imagens (branco → transparente, linhas semi-opacas)
+    # line_alpha=210 → ~82% opacidade — diagrama bem visível, texto por baixo ainda legível
+    tmp_diagrama = _preparar_imagem_transparente(DIAGRAMA_IMG_PATH, line_alpha=210)
+    tmp_placa    = _preparar_imagem_transparente(PLACA_IMG_PATH, crop_box=PLACA_CROP, line_alpha=230)
 
     try:
         # Criar PDF 1-página em memória com diagrama + placa sobrepostos
