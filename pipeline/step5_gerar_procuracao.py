@@ -42,11 +42,17 @@ def gerar_procuracao_pdf(dados, pasta_saida: str) -> str:
         endereco += f", {dados.cidade}-{dados.uf}"
     endereco = endereco.upper()
 
+    # Substituições do OUTORGANTE (titular/cliente)
     subs = {
         "MARCOS ANTONIO GOMES": (dados.titular or "").upper(),
         "298.607.681-53": dados.cpf_cnpj or "",
-        "R.SICILIA, SN, RESICENCIAL FLORENÇA, SINOP-MT": endereco
+        "R.SICILIA, SN, RESICENCIAL FLORENÇA, SINOP-MT": endereco,
     }
+
+    # Substituições do OUTORGADO (engenheiro/responsável técnico)
+    resp_nome = getattr(dados, "resp_nome", "") or ""
+    if resp_nome.strip():
+        subs["Edimo Perondi Junior"] = resp_nome.strip()
 
     def _replace_in_paragraph(para, old: str, new: str):
         if old not in para.text:

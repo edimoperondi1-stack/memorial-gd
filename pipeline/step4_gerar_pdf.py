@@ -33,19 +33,19 @@ from pathlib import Path
 # Calibrado para a renderização do LibreOffice (que comprime ~16% verticalmente vs Excel)
 # --- Esquema Unifilar ---
 DIAGRAMA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_unifilar.png")
-DIAGRAMA_POS_X = 266       # Posição horizontal (pts)
-DIAGRAMA_POS_Y = 339       # Posição vertical (pts) — borda inferior (PDF coords, y=0 no bottom)
-DIAGRAMA_WIDTH = 385       # Largura (pts) — reduzido ~5% do original (406)
-DIAGRAMA_HEIGHT = 197      # Altura (pts)  — comprimido ~84% do original (235) para alinhar com LO
+DIAGRAMA_POS_X = 248       # Posição horizontal (pts) — movido 18pts pra esquerda
+DIAGRAMA_POS_Y = 325       # Posição vertical (pts) — movido 14pts pra baixo (PDF: y menor = mais baixo)
+DIAGRAMA_WIDTH = 385       # Largura (pts)
+DIAGRAMA_HEIGHT = 197      # Altura (pts)
 
 # --- Placa de Advertência (CUIDADO / Risco de Choque) ---
 PLACA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_original.png")
 # Crop em pixels para remover as anotações de dimensão (setas azuis, cotas):
 PLACA_CROP = (75, 65, 510, 348)   # (left, top, right, bottom) — captura só a placa CUIDADO
-PLACA_POS_X = 175          # Posição horizontal (pts) — ajustado para LO
-PLACA_POS_Y = 220          # Posição vertical (pts)  — ajustado para LO
-PLACA_WIDTH = 85           # Largura (pts) — reduzido do original (104)
-PLACA_HEIGHT = 55          # Altura (pts)  — reduzido do original (68)
+PLACA_POS_X = 140          # Posição horizontal (pts) — movido pra esquerda
+PLACA_POS_Y = 200          # Posição vertical (pts)  — movido pra baixo
+PLACA_WIDTH = 85           # Largura (pts)
+PLACA_HEIGHT = 55          # Altura (pts)
 
 # Mapeamento tipo_fsa → abas do PDF (sem UC BENEFICIARIAS)
 ABAS_PDF = {
