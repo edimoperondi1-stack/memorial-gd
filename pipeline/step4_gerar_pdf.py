@@ -33,8 +33,8 @@ from pathlib import Path
 # Calibrado para a renderização do LibreOffice (que comprime ~16% verticalmente vs Excel)
 # --- Esquema Unifilar ---
 DIAGRAMA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_unifilar.png")
-DIAGRAMA_POS_X = 258       # Posição horizontal (pts) — 8pts esquerda do "quase bom" (266)
-DIAGRAMA_POS_Y = 333       # Posição vertical (pts) — 6pts abaixo do "quase bom" (339)
+DIAGRAMA_POS_X = 262       # Posição horizontal (pts) — 4pts esquerda do "quase bom" (266)
+DIAGRAMA_POS_Y = 336       # Posição vertical (pts) — 3pts abaixo do "quase bom" (339)
 DIAGRAMA_WIDTH = 385       # Largura (pts)
 DIAGRAMA_HEIGHT = 197      # Altura (pts)
 
@@ -42,8 +42,8 @@ DIAGRAMA_HEIGHT = 197      # Altura (pts)
 PLACA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_original.png")
 # Crop em pixels para remover as anotações de dimensão (setas azuis, cotas):
 PLACA_CROP = (75, 65, 510, 348)   # (left, top, right, bottom) — captura só a placa CUIDADO
-PLACA_POS_X = 200          # Posição horizontal (pts) — 19pts esquerda do original (219)
-PLACA_POS_Y = 240          # Posição vertical (pts)  — 11pts abaixo do original (251)
+PLACA_POS_X = 210          # Posição horizontal (pts) — 9pts esquerda do original (219)
+PLACA_POS_Y = 245          # Posição vertical (pts)  — 6pts abaixo do original (251)
 PLACA_WIDTH = 85           # Largura (pts)
 PLACA_HEIGHT = 55          # Altura (pts)
 

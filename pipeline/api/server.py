@@ -632,8 +632,10 @@ def _json_para_dados(payload: dict) -> DadosProjeto:
 
         # Responsável técnico
         resp_nome=str(payload.get("resp_nome", "")),
+        resp_cpf=str(payload.get("resp_cpf", "")),
         resp_telefone=str(payload.get("resp_telefone", "")),
         resp_email=str(payload.get("resp_email", "")),
+        resp_endereco=str(payload.get("resp_endereco", "")),
 
         # Tipo de formulário
         tipo_fsa=str(payload.get("tipo_fsa", "SOLICITACAO")),

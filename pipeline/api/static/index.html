@@ -1563,7 +1563,7 @@ function preencherDados() {
     setVal('bitola_terra_mm2', '10');
 
     document.getElementById('paineis-body').innerHTML = '';
-    const paineis = [[1, '', '', '', '']];
+    const paineis = [[12, 'CANADIAN SOLAR', 'CS7N-665TB', 2.57, 0.665]];
     paineis.forEach(([qty, fab, mod, area, pot]) => {
         const row = document.createElement('tr');
         row.innerHTML = `
@@ -1577,7 +1577,7 @@ function preencherDados() {
     });
 
     document.getElementById('inversores-body').innerHTML = '';
-    const inversores = [[1, '', '', '', 220]];
+    const inversores = [[1, 'GROWATT', 'MIN 6000TL-X', 6.0, 220]];
     inversores.forEach(([qty, fab, mod, pot, ten]) => {
         const row = document.createElement('tr');
         row.innerHTML = `
