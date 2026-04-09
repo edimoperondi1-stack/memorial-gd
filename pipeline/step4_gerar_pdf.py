@@ -218,17 +218,17 @@ def gerar_pdf(
         raise RuntimeError(f"Falha ao gerar PDF: {resultado.get('error', 'desconhecido')}")
 
     # ==============================================================
-    # OVERLAY DESABILITADO: restaurar_drawings já restaura os DrawingML
-    # do template e o LibreOffice renderiza nativamente. O overlay
-    # causava dupla renderização (diagrama/placa apareciam grandes demais
-    # e cobriam os valores das células no diagrama unifilar).
+    # OVERLAY COMO BACKGROUND: LibreOffice não renderiza os DrawingML
+    # shapes (caixas, linhas, setas do diagrama). O overlay adiciona
+    # o esquema como imagem de FUNDO, e o texto das células fica por
+    # cima (legível). Usa merge_under em vez de merge_page.
     # ==============================================================
-    # if "DU-SOLAR" in abas and os.path.exists(DIAGRAMA_IMG_PATH):
-    #     try:
-    #         print("  [step4] Aplicando imagem do Esquema Unifilar no fundo do PDF...")
-    #         _aplicar_diagrama_fundo(caminho_pdf)
-    #     except Exception as e:
-    #         print(f"  [step4] AVISO: Falha ao aplicar diagrama no fundo: {e}")
+    if "DU-SOLAR" in abas and os.path.exists(DIAGRAMA_IMG_PATH):
+        try:
+            print("  [step4] Aplicando esquema unifilar como FUNDO do PDF...")
+            _aplicar_diagrama_fundo(caminho_pdf)
+        except Exception as e:
+            print(f"  [step4] AVISO: Falha ao aplicar diagrama no fundo: {e}")
 
     tamanho = os.path.getsize(caminho_pdf)
     print(f"  [step4] OK — PDF gerado: {nome_pdf} ({tamanho:,} bytes)")
@@ -308,11 +308,15 @@ def _aplicar_diagrama_fundo(caminho_pdf: str):
         total_pages = len(original_pdf.pages)
         for i in range(total_pages):
             page = original_pdf.pages[i]
-            # Última página = DU-SOLAR: mescla overlay POR CIMA do conteúdo LO
-            # page.merge_page(watermark) → watermark desenhado após o conteúdo (foreground)
+            # Última página = DU-SOLAR: mescla overlay como FUNDO (background)
+            # watermark.merge_page(original) → texto do LO desenhado POR CIMA do diagrama
             if i == total_pages - 1:
-                page.merge_page(watermark_page)
-                writer.add_page(page)
+                # Ler watermark fresco (evita contaminação de referências)
+                bg_reader = PdfReader(io.BytesIO(packet.getvalue()))
+                bg_page = bg_reader.pages[0]
+                # Merge: conteúdo original POR CIMA do background (diagrama)
+                bg_page.merge_page(page)
+                writer.add_page(bg_page)
             else:
                 writer.add_page(page)
 
