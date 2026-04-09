@@ -118,8 +118,10 @@ class DadosProjeto:
 
     # ── 9. RESPONSÁVEL TÉCNICO ───────────────────────────────────────────────
     resp_nome: str = ""
+    resp_cpf: str = ""
     resp_telefone: str = ""
     resp_email: str = ""
+    resp_endereco: str = ""
 
     # ── 10. RELAÇÃO DE CARGA ─────────────────────────────────────────────────
     # Lista de tuplas: (quantidade, equipamento, pot_unitaria_w, fator_demanda)

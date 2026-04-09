@@ -51,8 +51,14 @@ def gerar_procuracao_pdf(dados, pasta_saida: str) -> str:
 
     # Substituições do OUTORGADO (engenheiro/responsável técnico)
     resp_nome = getattr(dados, "resp_nome", "") or ""
+    resp_cpf = getattr(dados, "resp_cpf", "") or ""
+    resp_endereco = getattr(dados, "resp_endereco", "") or ""
     if resp_nome.strip():
         subs["Edimo Perondi Junior"] = resp_nome.strip()
+    if resp_cpf.strip():
+        subs["058.029.991-01"] = resp_cpf.strip()
+    if resp_endereco.strip():
+        subs["Rua Giuliana, 1105, apartamento 04, Residencial Florença, Sinop, Mato Grosso"] = resp_endereco.strip()
 
     def _replace_in_paragraph(para, old: str, new: str):
         if old not in para.text:

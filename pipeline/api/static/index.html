@@ -994,8 +994,12 @@
         </div>
         <div class="grid grid-3">
             <div class="field"><label>Nome</label><input id="resp_nome"></div>
+            <div class="field"><label>CPF</label><input id="resp_cpf" placeholder="000.000.000-00"></div>
             <div class="field"><label>Telefone</label><input id="resp_telefone" placeholder="somente dígitos"></div>
+        </div>
+        <div class="grid grid-3">
             <div class="field"><label>E-mail</label><input id="resp_email" type="email"></div>
+            <div class="field" style="grid-column: span 2"><label>Endereço</label><input id="resp_endereco" placeholder="Rua, nº, bairro, cidade-UF"></div>
         </div>
     </div>
 
@@ -1419,8 +1423,10 @@ function buildPayload() {
         ucs_beneficiarias: collectUCs(),
 
         resp_nome:     val('resp_nome'),
+        resp_cpf:      val('resp_cpf'),
         resp_telefone: val('resp_telefone'),
         resp_email:    val('resp_email'),
+        resp_endereco: val('resp_endereco'),
 
         formulario_items: formulario_items
     };
@@ -1612,8 +1618,10 @@ function preencherDados() {
     });
 
     setVal('resp_nome', 'ENG. JOÃO DA SILVA');
+    setVal('resp_cpf', '000.000.000-00');
     setVal('resp_telefone', '66911112222');
     setVal('resp_email', 'engjoao@exemplo.com');
+    setVal('resp_endereco', 'Rua Exemplo, 100, Centro, Sinop-MT');
 }
 
 // ─── Sistema de Autocomplete de Equipamentos ──────────────────────────────────
@@ -1726,8 +1734,10 @@ function collectAllData() {
         _modo_carga: document.querySelector('input[name="modo_carga"]:checked')?.value || 'M',
 
         resp_nome:     val('resp_nome'),
+        resp_cpf:      val('resp_cpf'),
         resp_telefone: val('resp_telefone'),
         resp_email:    val('resp_email'),
+        resp_endereco: val('resp_endereco'),
     };
 }
 
@@ -1859,7 +1869,7 @@ function populateForm(data) {
         'disjuntor_geral_a','potencia_max_disponivel_kw','demanda_contratada_kw','fator_potencia',
         'num_fases','cabos_por_fase','bitola_fase_mm2','bitola_neutro_mm2','bitola_terra_mm2',
         'fuso','coord_x_long','coord_y_lat',
-        'resp_nome','resp_telefone','resp_email',
+        'resp_nome','resp_cpf','resp_telefone','resp_email','resp_endereco',
     ];
     campos.forEach(id => {
         if (data[id] !== undefined) setVal(id, data[id]);
