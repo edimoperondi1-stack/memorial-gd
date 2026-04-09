@@ -192,10 +192,10 @@ def gerar_pdf(
     # (LibreOffice Linux renderiza margens/fontes ~10% maiores que Windows)
     # Template original: RELACAO DE CARGA=70, FORMULARIO=65 → reduz 10% cada
     _patch_page_scale(tmp_xlsx, {
-        "RELACAO DE CARGA": 60,
-        "FORMULARIO": 55,
+        "RELACAO DE CARGA": 55,
+        "FORMULARIO": 50,
     })
-    print(f"  [step4] Scale de impressão reduzido para RELACAO DE CARGA(60) e FORMULARIO(55).")
+    print(f"  [step4] Scale de impressão reduzido para RELACAO DE CARGA(55) e FORMULARIO(50).")
 
     # Nome do PDF
     nome_pdf = f"{nome_titular.upper().strip()}_UC_{codigo_uc}.pdf"
