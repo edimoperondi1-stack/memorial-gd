@@ -42,8 +42,8 @@ DIAGRAMA_HEIGHT = 197      # Altura (pts)
 PLACA_IMG_PATH = str(Path(__file__).parent / "api" / "static" / "diagrama_original.png")
 # Crop em pixels para remover as anotações de dimensão (setas azuis, cotas):
 PLACA_CROP = (75, 65, 510, 348)   # (left, top, right, bottom) — captura só a placa CUIDADO
-PLACA_POS_X = 215          # Posição horizontal (pts) — -15 esquerda (230→215)
-PLACA_POS_Y = 240          # Posição vertical (pts) — -10 pra baixo (250→240)
+PLACA_POS_X = 275          # Posição horizontal (pts) — +60 direita (215→275)
+PLACA_POS_Y = 290          # Posição vertical (pts) — +50 pra cima (240→290)
 PLACA_WIDTH = 80           # Largura (pts)
 PLACA_HEIGHT = 50          # Altura (pts)
 
