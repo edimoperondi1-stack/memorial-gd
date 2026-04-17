@@ -142,7 +142,7 @@ def _get_token_do_request(handler) -> str | None:
 
 def _rota_publica(path: str) -> bool:
     """Rotas que não requerem autenticação."""
-    return path in ("/login", "/api/login", "/api/status") or path.startswith("/static/")
+    return path in ("/login", "/api/login") or path.startswith("/static/")
 
 
 def _carregar_equipamentos() -> dict:
