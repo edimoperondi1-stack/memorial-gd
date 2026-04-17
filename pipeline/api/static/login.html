@@ -136,9 +136,24 @@
   </div>
 
   <script>
-    // Se já tem sessão válida no localStorage, redireciona direto
-    if (localStorage.getItem('memorial_token')) {
-      window.location.replace('/');
+    // Se tem token, verifica se ainda é válido no servidor antes de redirecionar
+    const tokenSalvo = localStorage.getItem('memorial_token');
+    if (tokenSalvo) {
+      fetch('/api/status', { headers: { 'Authorization': 'Bearer ' + tokenSalvo } })
+        .then(resp => {
+          if (resp.ok) {
+            window.location.replace('/');
+          } else {
+            // Token inválido/expirado — limpa e mostra login
+            localStorage.removeItem('memorial_token');
+            localStorage.removeItem('memorial_usuario');
+          }
+        })
+        .catch(() => {
+          // Erro de rede — limpa token pra evitar loop
+          localStorage.removeItem('memorial_token');
+          localStorage.removeItem('memorial_usuario');
+        });
     }
 
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
