@@ -3,8 +3,21 @@ import tempfile
 import subprocess
 import shutil
 import platform
+from datetime import datetime
 from pathlib import Path
 import docx
+
+_MESES_PT = {
+    1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril",
+    5: "maio", 6: "junho", 7: "julho", 8: "agosto",
+    9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro",
+}
+
+
+def _data_por_extenso_pt() -> str:
+    """Retorna a data atual em português: '17 de abril de 2026'."""
+    hoje = datetime.now()
+    return f"{hoje.day} de {_MESES_PT[hoje.month]} de {hoje.year}"
 
 def _get_soffice_cmd() -> str:
     """Retorna o executável do LibreOffice"""
@@ -48,6 +61,11 @@ def gerar_procuracao_pdf(dados, pasta_saida: str) -> str:
         "298.607.681-53": dados.cpf_cnpj or "",
         "R.SICILIA, SN, RESICENCIAL FLORENÇA, SINOP-MT": endereco,
     }
+
+    # Data de emissão (substitui a linha "Sinop, 31 de março de 2026")
+    cidade_proc = (dados.cidade or "Sinop").strip().title()
+    data_hoje = _data_por_extenso_pt()
+    subs["Sinop, 31 de março de 2026"] = f"{cidade_proc}, {data_hoje}"
 
     # Substituições do OUTORGADO (engenheiro/responsável técnico)
     resp_nome = getattr(dados, "resp_nome", "") or ""

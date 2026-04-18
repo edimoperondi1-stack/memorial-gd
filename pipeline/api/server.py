@@ -264,11 +264,12 @@ class APIHandler(SimpleHTTPRequestHandler):
             if not filepath.exists():
                 self._json_response(404, {"error": "Arquivo não encontrado"})
                 return
-            content_type = (
-                "application/pdf"
-                if filepath.name.endswith(".pdf")
-                else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+            if filepath.name.endswith(".pdf"):
+                content_type = "application/pdf"
+            elif filepath.name.endswith(".txt"):
+                content_type = "text/plain; charset=utf-8"
+            else:
+                content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             self._serve_file(filepath, content_type, download=True)
 
         elif path == "/api/equipamentos":
@@ -499,6 +500,10 @@ class APIHandler(SimpleHTTPRequestHandler):
                 proc_name = Path(resultado["procuracao"]).name
                 response["procuracao_url"] = f"/api/download/{exec_id}/{urllib.parse.quote(proc_name)}"
                 response["procuracao_nome"] = proc_name
+            if resultado.get("txt") and Path(resultado["txt"]).exists():
+                txt_name = Path(resultado["txt"]).name
+                response["txt_url"] = f"/api/download/{exec_id}/{urllib.parse.quote(txt_name)}"
+                response["txt_nome"] = txt_name
 
             self._json_response(200, response)
 

@@ -640,7 +640,7 @@
         </div>
     </div>
     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-        <button class="btn-demo" onclick="window.location.href='/static/ferramentas.html'" title="Ferramentas de Dimensionamento">&#9874; Ferramentas</button>
+        <button class="btn-demo" onclick="alert('⚙️ Ferramentas de Dimensionamento\n\nEsta funcionalidade será implementada na Fase 5.\nFique ligado nas próximas atualizações!')" title="Ferramentas de Dimensionamento (em desenvolvimento)">&#9874; Ferramentas</button>
         <button class="btn-demo" onclick="preencherDados()">&#9881; Dados de Exemplo</button>
         <button class="btn-salvar" onclick="abrirModalSalvar()">&#128190; Salvar Projeto</button>
         <button class="btn-carregar" onclick="abrirModalProjetos()">&#128193; Carregar Projeto</button>
@@ -1499,6 +1499,9 @@ async function gerarDocumentos() {
             const procLink = data.procuracao_url
                 ? `<a href="${data.procuracao_url}" class="dl-proc" download="${data.procuracao_nome}">📜 ${data.procuracao_nome}</a>`
                 : '';
+            const txtLink = data.txt_url
+                ? `<a href="${data.txt_url}" class="dl-proc" download="${data.txt_nome}">📝 ${data.txt_nome}</a>`
+                : '';
             setStatus('success', `
                 <strong>Documentos gerados com sucesso!</strong>
                 <div class="download-links">
@@ -1509,6 +1512,7 @@ async function gerarDocumentos() {
                         📄 ${data.pdf_nome}
                     </a>
                     ${procLink}
+                    ${txtLink}
                 </div>
                 <div><button class="btn-nova" onclick="novaSolicitacao()">+ Nova Solicitação</button></div>
             `);

@@ -43,6 +43,7 @@ from step2_recalcular import recalcular, verificar_campos_criticos
 from step3_gerar_xlsx import gerar_xlsx, validar_xlsx_saida
 from step4_gerar_pdf import gerar_pdf, validar_pdf
 from step5_gerar_procuracao import gerar_procuracao_pdf
+from step6_gerar_txt import gerar_txt_dados
 
 
 def executar_pipeline(
@@ -84,6 +85,7 @@ def executar_pipeline(
         "step3": None,
         "step4": None,
         "step5": None,
+        "step6": None,
     }
 
     # ── Pasta temporária ──────────────────────────────────────────
@@ -185,8 +187,18 @@ def executar_pipeline(
             "ok": False,
         }
 
+    # ── STEP 6: Gerar TXT com dados do projeto ───────────────────────────
+    print(f"\n[STEP 6] Gerando TXT com dados do projeto...")
+    try:
+        caminho_txt = gerar_txt_dados(dados, pasta_saida=pasta_saida)
+        relatorio["step6"] = {"caminho": caminho_txt, "ok": True}
+    except Exception as e:
+        print(f"[STEP 6] AVISO — Falha ao gerar TXT: {e}")
+        caminho_txt = None
+        relatorio["step6"] = {"error": str(e), "ok": False}
+
     # ── Resultado final ───────────────────────────────────────────
-    tudo_ok = all(v["ok"] for k, v in relatorio.items() if v is not None and k != "step5")
+    tudo_ok = all(v["ok"] for k, v in relatorio.items() if v is not None and k not in ("step5", "step6"))
 
     print(f"\n{'='*60}")
     if tudo_ok:
@@ -197,12 +209,15 @@ def executar_pipeline(
     print(f"  PDF:   {Path(caminho_pdf).name}")
     if caminho_procuracao:
         print(f"  Procuracao: {Path(caminho_procuracao).name}")
+    if caminho_txt:
+        print(f"  TXT:   {Path(caminho_txt).name}")
     print(f"{'='*60}\n")
 
     return {
         "xlsx": caminho_xlsx,
         "pdf": caminho_pdf,
         "procuracao": caminho_procuracao,
+        "txt": caminho_txt,
         "relatorio": relatorio,
         "ok": tudo_ok,
     }
