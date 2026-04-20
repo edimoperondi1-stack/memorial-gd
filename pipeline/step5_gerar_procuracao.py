@@ -3,7 +3,7 @@ import tempfile
 import subprocess
 import shutil
 import platform
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import docx
 
@@ -13,11 +13,36 @@ _MESES_PT = {
     9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro",
 }
 
+# Preposições/conjunções que ficam em minúsculo em nomes próprios em PT-BR
+_PALAVRAS_MINUSCULAS = {"de", "da", "do", "das", "dos", "e"}
+
+# Fuso horário de Brasília (BRT = UTC-3)
+_TZ_BR = timezone(timedelta(hours=-3))
+
 
 def _data_por_extenso_pt() -> str:
-    """Retorna a data atual em português: '17 de abril de 2026'."""
-    hoje = datetime.now()
+    """Retorna a data atual em português no fuso de Brasília: '17 de abril de 2026'."""
+    hoje = datetime.now(_TZ_BR)
     return f"{hoje.day} de {_MESES_PT[hoje.month]} de {hoje.year}"
+
+
+def _titulo_pt(texto: str) -> str:
+    """Capitaliza nome próprio em PT-BR mantendo preposições em minúsculo.
+
+    Ex: 'RIO DE JANEIRO' → 'Rio de Janeiro'
+        'SÃO JOSÉ DOS CAMPOS' → 'São José dos Campos'
+    A primeira palavra fica sempre capitalizada.
+    """
+    partes = texto.strip().split()
+    if not partes:
+        return ""
+    resultado = [partes[0].capitalize()]
+    for p in partes[1:]:
+        if p.lower() in _PALAVRAS_MINUSCULAS:
+            resultado.append(p.lower())
+        else:
+            resultado.append(p.capitalize())
+    return " ".join(resultado)
 
 def _get_soffice_cmd() -> str:
     """Retorna o executável do LibreOffice"""
@@ -63,7 +88,7 @@ def gerar_procuracao_pdf(dados, pasta_saida: str) -> str:
     }
 
     # Data de emissão (substitui a linha "Sinop, 31 de março de 2026")
-    cidade_proc = (dados.cidade or "Sinop").strip().title()
+    cidade_proc = _titulo_pt(dados.cidade or "Sinop")
     data_hoje = _data_por_extenso_pt()
     subs["Sinop, 31 de março de 2026"] = f"{cidade_proc}, {data_hoje}"
 
