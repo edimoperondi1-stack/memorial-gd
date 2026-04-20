@@ -49,24 +49,33 @@ def gerar_txt_dados(dados, pasta_saida: str) -> str:
     x = getattr(dados, "coord_x_long", 0) or 0
     y = getattr(dados, "coord_y_lat", 0) or 0
 
-    # Primeiro módulo e inversor (se houver)
-    painel = dados.paineis[0] if dados.paineis else None
-    inv = dados.inversores[0] if dados.inversores else None
-
-    if painel:
-        pot_w = int(round(float(painel.potencia_kw) * 1000))
-        modelo_mod = f"{painel.modelo} {pot_w}W"
-        fab_mod = painel.fabricante
+    # Módulos — lista todos
+    linhas_modulos = []
+    if dados.paineis:
+        for p in dados.paineis:
+            pot_w = int(round(float(p.potencia_kw) * 1000))
+            qtd = getattr(p, "quantidade", None) or 1
+            linhas_modulos.append(f"MODELO MODULOS: {qtd}x {p.modelo} {pot_w}W ")
+            linhas_modulos.append(f"FABRICANTE MODULOS: {p.fabricante}  ")
+            linhas_modulos.append("")
+        # remove a linha em branco final (será adicionada depois)
+        if linhas_modulos and linhas_modulos[-1] == "":
+            linhas_modulos.pop()
     else:
-        modelo_mod = ""
-        fab_mod = ""
+        linhas_modulos = ["MODELO MODULOS: ", "FABRICANTE MODULOS:  "]
 
-    if inv:
-        modelo_inv = inv.modelo
-        fab_inv = inv.fabricante
+    # Inversores — lista todos
+    linhas_inversores = []
+    if dados.inversores:
+        for inv in dados.inversores:
+            qtd = getattr(inv, "quantidade", None) or 1
+            linhas_inversores.append(f"MODELO INVERSOR: {qtd}x {inv.modelo}   ")
+            linhas_inversores.append(f"FABRICANTE INVERSOR:  {inv.fabricante}   ")
+            linhas_inversores.append("")
+        if linhas_inversores and linhas_inversores[-1] == "":
+            linhas_inversores.pop()
     else:
-        modelo_inv = ""
-        fab_inv = ""
+        linhas_inversores = ["MODELO INVERSOR:    ", "FABRICANTE INVERSOR:     "]
 
     linhas = [
         "",
@@ -91,11 +100,9 @@ def gerar_txt_dados(dados, pasta_saida: str) -> str:
         f"EMAIL: {dados.email}",
         "",
         "",
-        f"MODELO MODULOS: {modelo_mod} ",
-        f"FABRICANTE MODULOS: {fab_mod}  ",
+        *linhas_modulos,
         "",
-        f"MODELO INVERSOR: {modelo_inv}   ",
-        f"FABRICANTE INVERSOR:  {fab_inv}   ",
+        *linhas_inversores,
         "",
     ]
 

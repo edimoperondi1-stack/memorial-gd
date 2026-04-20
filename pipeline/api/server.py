@@ -242,6 +242,9 @@ class APIHandler(SimpleHTTPRequestHandler):
         elif path == "/" or path == "":
             self._serve_file(STATIC_DIR / "index.html", "text/html")
 
+        elif path == "/ferramentas" or path == "/ferramentas.html":
+            self._serve_file(STATIC_DIR / "ferramentas.html", "text/html")
+
         elif path.startswith("/static/"):
             filename = path[len("/static/"):]
             filepath = STATIC_DIR / filename

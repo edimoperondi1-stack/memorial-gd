@@ -831,7 +831,9 @@
         btn.textContent = 'Buscando...';
         resultado.style.display = 'none';
 
-        fetch('/api/temperatura?cidade=' + encodeURIComponent(cidade) + '&uf=' + encodeURIComponent(uf))
+        fetch('/api/temperatura?cidade=' + encodeURIComponent(cidade) + '&uf=' + encodeURIComponent(uf), {
+                headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('memorial_token') || '') }
+            })
             .then(function(resp) { return resp.json().then(function(data) { return { ok: resp.ok, data: data }; }); })
             .then(function(res) {
                 btn.disabled = false;
@@ -873,8 +875,234 @@
             });
     }
 
-    // ── Condutores (stub — Fase 5) ─────────────────────────────────
-    function calcularCondutores() { alert('Calculo de condutores sera implementado na Fase 5.'); }
+    // ── Verificação de autenticação ────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async function() {
+        const token = localStorage.getItem('memorial_token') || '';
+        if (!token) { window.location.replace('/login'); return; }
+        try {
+            const resp = await fetch('/api/status', { headers: { 'Authorization': 'Bearer ' + token } });
+            if (resp.status === 401) {
+                localStorage.removeItem('memorial_token');
+                window.location.replace('/login');
+            }
+        } catch (e) { /* offline: deixa a página aberta */ }
+    });
+
+    // ── Condutores CA (NBR 5410) ───────────────────────────────────
+
+    function _fatorTemperatura(temp) {
+        // Interpolação linear entre pontos tabelados, bounds clamped
+        const chaves = Object.keys(FATOR_TEMP).map(Number).sort(function(a,b){return a-b;});
+        if (temp <= chaves[0]) return FATOR_TEMP[chaves[0]];
+        if (temp >= chaves[chaves.length-1]) return FATOR_TEMP[chaves[chaves.length-1]];
+        for (let i = 0; i < chaves.length - 1; i++) {
+            const t1 = chaves[i], t2 = chaves[i+1];
+            if (temp >= t1 && temp <= t2) {
+                const f1 = FATOR_TEMP[t1], f2 = FATOR_TEMP[t2];
+                return f1 + (f2 - f1) * (temp - t1) / (t2 - t1);
+            }
+        }
+        return 1.0;
+    }
+
+    function _fatorAgrupamento(n) {
+        if (n <= 0) return 1.0;
+        if (n > 20) return 0.35;
+        return FATOR_AGRUP[n] || 1.0;
+    }
+
+    function _numCondutoresCarregados(sistema) {
+        // Mono 2F → 2 carregados; Trifásico 3F → 3; Trifásico 4F (com neutro equilibrado) → 3
+        if (sistema === 'mono') return 2;
+        return 3;
+    }
+
+    function validarCondutores() {
+        const erros = [];
+        const campos = [
+            { id: 'cond_ib',          label: 'Corrente Ib (A)',     permitirZero: false },
+            { id: 'cond_comprimento', label: 'Comprimento (m)',     permitirZero: false },
+            { id: 'cond_fp',          label: 'Fator de Potência',   permitirZero: false },
+            { id: 'cond_dv_max',      label: 'Delta V Max (%)',     permitirZero: false },
+            { id: 'cond_temp',        label: 'Temperatura (°C)',    permitirZero: true  },
+            { id: 'cond_circuitos',   label: 'Circuitos Agrupados', permitirZero: false }
+        ];
+        for (const c of campos) {
+            const el = document.getElementById(c.id);
+            const raw = el ? el.value.trim() : '';
+            if (raw === '') { erros.push('Campo obrigatório: ' + c.label); continue; }
+            const v = parseFloat(raw);
+            if (isNaN(v)) { erros.push('Valor inválido em: ' + c.label); continue; }
+            if (!c.permitirZero && v <= 0) { erros.push(c.label + ' deve ser positivo'); }
+        }
+        const fp = parseFloat(document.getElementById('cond_fp').value);
+        if (!isNaN(fp) && (fp <= 0 || fp > 1)) {
+            erros.push('Fator de potência deve estar entre 0 e 1');
+        }
+        return { ok: erros.length === 0, erros };
+    }
+
+    function calcularCondutores() {
+        const validacao = validarCondutores();
+        const destino = document.getElementById('resultado-condutores-conteudo');
+        const caixa   = document.getElementById('resultado-condutores');
+
+        if (!validacao.ok) {
+            destino.innerHTML =
+                '<div style="color:var(--red); padding:0.5rem;">' +
+                validacao.erros.map(function(e){ return '<div>&#9940; ' + e + '</div>'; }).join('') +
+                '</div>';
+            caixa.style.display = 'block';
+            return;
+        }
+
+        // ── Leitura de inputs ─────────────────────────────────────
+        const Ib         = parseFloat(document.getElementById('cond_ib').value);
+        const L          = parseFloat(document.getElementById('cond_comprimento').value);
+        const V          = parseFloat(document.getElementById('cond_tensao').value);
+        const sistema    = document.getElementById('cond_sistema').value;
+        const fp         = parseFloat(document.getElementById('cond_fp').value);
+        const dV_max_pct = parseFloat(document.getElementById('cond_dv_max').value);
+        const metodo     = document.getElementById('cond_metodo').value;
+        const temp       = parseFloat(document.getElementById('cond_temp').value);
+        const n_circuitos = parseInt(document.getElementById('cond_circuitos').value, 10);
+
+        // ── Fatores de correção ───────────────────────────────────
+        const fT = _fatorTemperatura(temp);
+        const fA = _fatorAgrupamento(n_circuitos);
+        const fCorrecao = fT * fA;
+
+        // ── Ib corrigida para seleção por capacidade ──────────────
+        // Critério: Iz0 >= Ib / (fT * fA)
+        const Ib_corrigida = Ib / fCorrecao;
+
+        // ── Tabela de capacidade (por método e nº de condutores) ──
+        const n_carregados = _numCondutoresCarregados(sistema);
+        const tabela = IZ0_TABLE[metodo];
+        if (!tabela) {
+            destino.innerHTML = '<div style="color:var(--red);">Método ' + metodo + ' não tabelado.</div>';
+            caixa.style.display = 'block';
+            return;
+        }
+        const iz0_list = tabela[n_carregados] || tabela[3];
+
+        // ── Critério 1: Capacidade de corrente ────────────────────
+        let idx_capacidade = -1;
+        for (let i = 0; i < BITOLAS_NBR.length; i++) {
+            if (iz0_list[i] >= Ib_corrigida) { idx_capacidade = i; break; }
+        }
+        if (idx_capacidade === -1) {
+            destino.innerHTML =
+                '<div style="color:var(--red); padding:0.5rem;">' +
+                '&#9940; Corrente excessiva: nenhuma bitola da tabela (até 120 mm²) atende à Ib corrigida de ' +
+                Ib_corrigida.toFixed(1) + ' A. Considere aumentar o método de instalação ou dividir em circuitos.' +
+                '</div>';
+            caixa.style.display = 'block';
+            return;
+        }
+        const S_capacidade = BITOLAS_NBR[idx_capacidade];
+        const Iz_capacidade = iz0_list[idx_capacidade] * fCorrecao;
+
+        // ── Critério 2: Queda de tensão ───────────────────────────
+        // Mono 2F:   dV = 2 × ρ × L × Ib × cos(φ) / S
+        // Tri 3F/4F: dV = √3 × ρ × L × Ib × cos(φ) / S
+        const fator_dv = (sistema === 'mono') ? 2 : Math.sqrt(3);
+        const numerador_dv = fator_dv * RHO_COBRE_70 * L * Ib * fp;
+
+        let idx_queda = -1;
+        let dV_pct_escolhido = 0;
+        for (let i = 0; i < BITOLAS_NBR.length; i++) {
+            const S = BITOLAS_NBR[i];
+            const dV_abs = numerador_dv / S;
+            const dV_pct = (dV_abs / V) * 100;
+            if (dV_pct <= dV_max_pct) {
+                idx_queda = i;
+                dV_pct_escolhido = dV_pct;
+                break;
+            }
+        }
+        if (idx_queda === -1) {
+            destino.innerHTML =
+                '<div style="color:var(--red); padding:0.5rem;">' +
+                '&#9940; Queda de tensão excessiva: nenhuma bitola atende o limite de ' +
+                dV_max_pct.toFixed(1) + '%. Reduza o comprimento ou aumente o ΔV aceitável.' +
+                '</div>';
+            caixa.style.display = 'block';
+            return;
+        }
+        const S_queda = BITOLAS_NBR[idx_queda];
+
+        // ── Bitola final: mais restritiva (maior das duas) ────────
+        const idx_final = Math.max(idx_capacidade, idx_queda);
+        const S_final = BITOLAS_NBR[idx_final];
+        const criterio_dominante = (idx_capacidade >= idx_queda) ? 'Capacidade de corrente' : 'Queda de tensão';
+        const dV_final_abs = numerador_dv / S_final;
+        const dV_final_pct = (dV_final_abs / V) * 100;
+        const Iz_final = iz0_list[idx_final] * fCorrecao;
+
+        renderizarResultadoCondutores({
+            Ib, L, V, sistema, fp, dV_max_pct, metodo, temp, n_circuitos,
+            fT, fA, fCorrecao, Ib_corrigida, n_carregados,
+            S_capacidade, Iz_capacidade,
+            S_queda, dV_pct_queda: dV_pct_escolhido,
+            S_final, criterio_dominante, dV_final_abs, dV_final_pct, Iz_final
+        });
+    }
+
+    function renderizarResultadoCondutores(d) {
+        const cardStyle = 'background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:0.75rem;';
+        const labelStyle = 'font-size:0.7rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.15rem;';
+        const valStyle  = 'font-size:1rem;font-weight:600;color:var(--text);';
+        const gridStyle = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.6rem;';
+        const badgeOk   = 'background:var(--green-soft);color:var(--green);border:1px solid var(--green);border-radius:4px;padding:2px 8px;font-size:0.75rem;font-weight:700;';
+
+        let html = '';
+
+        // Bloco 1 — Fatores aplicados
+        html += '<div style="' + cardStyle + '">';
+        html += '<div style="font-family:\'Outfit\',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;">Fatores de Correção</div>';
+        html += '<div style="' + gridStyle + '">';
+        html += '<div><span style="' + labelStyle + '">Fator Temperatura (fT)</span><span style="' + valStyle + '">' + d.fT.toFixed(2) + '</span></div>';
+        html += '<div><span style="' + labelStyle + '">Fator Agrupamento (fA)</span><span style="' + valStyle + '">' + d.fA.toFixed(2) + '</span></div>';
+        html += '<div><span style="' + labelStyle + '">fT × fA</span><span style="' + valStyle + '">' + d.fCorrecao.toFixed(3) + '</span></div>';
+        html += '<div><span style="' + labelStyle + '">Ib corrigida</span><span style="' + valStyle + '">' + d.Ib_corrigida.toFixed(2) + ' A</span></div>';
+        html += '</div></div>';
+
+        // Bloco 2 — Critério 1 (capacidade)
+        html += '<div style="' + cardStyle + '">';
+        html += '<div style="font-family:\'Outfit\',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;">Critério 1 — Capacidade de Corrente</div>';
+        html += '<div style="' + gridStyle + '">';
+        html += '<div><span style="' + labelStyle + '">Bitola mínima (Iz)</span><span style="' + valStyle + '">' + d.S_capacidade + ' mm²</span></div>';
+        html += '<div><span style="' + labelStyle + '">Iz efetiva</span><span style="' + valStyle + '">' + d.Iz_capacidade.toFixed(1) + ' A</span></div>';
+        html += '<div><span style="' + labelStyle + '">Condutores carregados</span><span style="' + valStyle + '">' + d.n_carregados + '</span></div>';
+        html += '</div></div>';
+
+        // Bloco 3 — Critério 2 (queda de tensão)
+        html += '<div style="' + cardStyle + '">';
+        html += '<div style="font-family:\'Outfit\',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;">Critério 2 — Queda de Tensão (ΔV ≤ ' + d.dV_max_pct.toFixed(1) + '%)</div>';
+        html += '<div style="' + gridStyle + '">';
+        html += '<div><span style="' + labelStyle + '">Bitola mínima (ΔV)</span><span style="' + valStyle + '">' + d.S_queda + ' mm²</span></div>';
+        html += '<div><span style="' + labelStyle + '">ΔV obtida</span><span style="' + valStyle + '">' + d.dV_pct_queda.toFixed(2) + ' %</span></div>';
+        html += '</div></div>';
+
+        // Bloco 4 — Resultado final
+        html += '<div style="' + cardStyle + 'border-color:var(--amber);">';
+        html += '<div style="font-family:\'Outfit\',sans-serif;font-size:0.8rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;">Bitola Recomendada</div>';
+        html += '<div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.6rem;">';
+        html += '<div style="font-size:1.8rem;font-weight:700;color:var(--amber);">' + d.S_final + ' mm²</div>';
+        html += '<span style="' + badgeOk + '">' + d.criterio_dominante + '</span>';
+        html += '</div>';
+        html += '<div style="' + gridStyle + '">';
+        html += '<div><span style="' + labelStyle + '">Iz final</span><span style="' + valStyle + '">' + d.Iz_final.toFixed(1) + ' A (Ib = ' + d.Ib.toFixed(1) + ' A)</span></div>';
+        html += '<div><span style="' + labelStyle + '">ΔV final</span><span style="' + valStyle + '">' + d.dV_final_abs.toFixed(2) + ' V (' + d.dV_final_pct.toFixed(2) + '%)</span></div>';
+        html += '</div>';
+        html += '<div style="font-size:0.73rem;color:var(--text-muted);margin-top:0.5rem;">Cobre PVC 70°C · Método ' + d.metodo + ' · ρ = 0,0237 Ω·mm²/m</div>';
+        html += '</div>';
+
+        document.getElementById('resultado-condutores-conteudo').innerHTML = html;
+        document.getElementById('resultado-condutores').style.display = 'block';
+        document.getElementById('resultado-condutores').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 </script>
 
 </body>

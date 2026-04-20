@@ -640,7 +640,7 @@
         </div>
     </div>
     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
-        <button class="btn-demo" onclick="alert('⚙️ Ferramentas de Dimensionamento\n\nEsta funcionalidade será implementada na Fase 5.\nFique ligado nas próximas atualizações!')" title="Ferramentas de Dimensionamento (em desenvolvimento)">&#9874; Ferramentas</button>
+        <button class="btn-demo" onclick="window.location.href='/ferramentas'" title="Ferramentas de Dimensionamento">&#9874; Ferramentas</button>
         <button class="btn-demo" onclick="preencherDados()">&#9881; Dados de Exemplo</button>
         <button class="btn-salvar" onclick="abrirModalSalvar()">&#128190; Salvar Projeto</button>
         <button class="btn-carregar" onclick="abrirModalProjetos()">&#128193; Carregar Projeto</button>
@@ -1496,23 +1496,16 @@ async function gerarDocumentos() {
         const data = await res.json();
 
         if (data.ok) {
-            const procLink = data.procuracao_url
-                ? `<a href="${data.procuracao_url}" class="dl-proc" download="${data.procuracao_nome}">📜 ${data.procuracao_nome}</a>`
-                : '';
-            const txtLink = data.txt_url
-                ? `<a href="${data.txt_url}" class="dl-proc" download="${data.txt_nome}">📝 ${data.txt_nome}</a>`
+            const mkLink = (url, nome, classe, emoji) => url
+                ? `<a href="#" class="${classe}" onclick="baixarArquivo(event, '${url}', ${JSON.stringify(nome)})">${emoji} ${nome}</a>`
                 : '';
             setStatus('success', `
                 <strong>Documentos gerados com sucesso!</strong>
                 <div class="download-links">
-                    <a href="${data.xlsx_url}" class="dl-xlsx" download="${data.xlsx_nome}">
-                        📊 ${data.xlsx_nome}
-                    </a>
-                    <a href="${data.pdf_url}" class="dl-pdf" download="${data.pdf_nome}">
-                        📄 ${data.pdf_nome}
-                    </a>
-                    ${procLink}
-                    ${txtLink}
+                    ${mkLink(data.xlsx_url, data.xlsx_nome, 'dl-xlsx', '📊')}
+                    ${mkLink(data.pdf_url, data.pdf_nome, 'dl-pdf', '📄')}
+                    ${mkLink(data.procuracao_url, data.procuracao_nome, 'dl-proc', '📜')}
+                    ${mkLink(data.txt_url, data.txt_nome, 'dl-proc', '📝')}
                 </div>
                 <div><button class="btn-nova" onclick="novaSolicitacao()">+ Nova Solicitação</button></div>
             `);
@@ -1980,6 +1973,34 @@ function populateForm(data) {
 function getToken() { return localStorage.getItem('memorial_token') || ''; }
 function authHeaders(extra) {
     return Object.assign({ 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }, extra || {});
+}
+
+// ── Download autenticado (compatível com iframe HF) ──────────────────
+async function baixarArquivo(event, url, nome) {
+    if (event) event.preventDefault();
+    const link = event && event.currentTarget;
+    const textoOriginal = link ? link.innerHTML : '';
+    try {
+        if (link) { link.style.opacity = '0.6'; link.innerHTML = '⏳ Baixando...'; }
+        const resp = await fetch(url, { headers: { 'Authorization': 'Bearer ' + getToken() } });
+        if (!resp.ok) {
+            alert('Erro ao baixar arquivo (status ' + resp.status + ')');
+            return;
+        }
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = nome || 'arquivo';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1500);
+    } catch (e) {
+        alert('Erro ao baixar arquivo: ' + e.message);
+    } finally {
+        if (link) { link.style.opacity = ''; link.innerHTML = textoOriginal; }
+    }
 }
 
 // Verificar autenticação ao carregar a página
