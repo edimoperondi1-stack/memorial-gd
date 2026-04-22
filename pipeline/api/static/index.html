@@ -1496,8 +1496,10 @@ async function gerarDocumentos() {
         const data = await res.json();
 
         if (data.ok) {
+            const escAttr = (s) => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const escHtml = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
             const mkLink = (url, nome, classe, emoji) => url
-                ? `<a href="#" class="${classe}" onclick="baixarArquivo(event, '${url}', ${JSON.stringify(nome)})">${emoji} ${nome}</a>`
+                ? `<a href="#" class="${classe}" data-url="${escAttr(url)}" data-nome="${escAttr(nome)}" onclick="baixarArquivo(event, this); return false;">${emoji} ${escHtml(nome)}</a>`
                 : '';
             setStatus('success', `
                 <strong>Documentos gerados com sucesso!</strong>
@@ -1976,9 +1978,11 @@ function authHeaders(extra) {
 }
 
 // ── Download autenticado (compatível com iframe HF) ──────────────────
-async function baixarArquivo(event, url, nome) {
-    if (event) event.preventDefault();
-    const link = event && event.currentTarget;
+async function baixarArquivo(event, link) {
+    if (event) { event.preventDefault(); event.stopPropagation(); }
+    if (!link) link = event && event.currentTarget;
+    const url = link && link.dataset ? link.dataset.url : '';
+    const nome = link && link.dataset ? link.dataset.nome : 'arquivo';
     const textoOriginal = link ? link.innerHTML : '';
     try {
         if (link) { link.style.opacity = '0.6'; link.innerHTML = '⏳ Baixando...'; }
