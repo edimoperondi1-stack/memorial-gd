@@ -36,13 +36,15 @@ Formato de saída:
 
 from pathlib import Path
 
+from modelos import sanitize_filename_part
+
 
 def gerar_txt_dados(dados, pasta_saida: str) -> str:
     """Gera o arquivo TXT resumo e retorna o caminho absoluto."""
     pasta = Path(pasta_saida)
     pasta.mkdir(parents=True, exist_ok=True)
 
-    nome_arquivo = f"{(dados.titular or '').upper().strip()}_UC_{dados.codigo_uc}_DADOS.txt"
+    nome_arquivo = f"{sanitize_filename_part((dados.titular or '').upper())}_UC_{sanitize_filename_part(dados.codigo_uc)}_DADOS.txt"
     caminho_txt = pasta / nome_arquivo
 
     # Coordenadas (podem vir como UTM nos campos coord_x_long/coord_y_lat)

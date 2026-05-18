@@ -7,6 +7,8 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import docx
 
+from modelos import sanitize_filename_part
+
 _MESES_PT = {
     1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril",
     5: "maio", 6: "junho", 7: "julho", 8: "agosto",
@@ -130,7 +132,7 @@ def gerar_procuracao_pdf(dados, pasta_saida: str) -> str:
     doc.save(tmp_docx)
     
     # 3. Converter para PDF
-    nome_pdf = f"{(dados.titular or '').upper().strip()}_UC_{dados.codigo_uc}_PROCURACAO.pdf"
+    nome_pdf = f"{sanitize_filename_part((dados.titular or '').upper())}_UC_{sanitize_filename_part(dados.codigo_uc)}_PROCURACAO.pdf"
     caminho_pdf = os.path.join(pasta_saida, nome_pdf)
     Path(pasta_saida).mkdir(parents=True, exist_ok=True)
     

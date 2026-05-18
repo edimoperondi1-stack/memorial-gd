@@ -5,8 +5,20 @@ Define os dados de entrada do pipeline como dataclasses Python.
 Cada campo corresponde a uma célula da planilha Excel.
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import Optional
+
+
+def sanitize_filename_part(valor: str) -> str:
+    """Remove caracteres invalidos em nomes de arquivo (/, \\, :, *, ?, ", <, >, |)
+    e colapsa espacos. Preserva o conteudo original — usar somente ao montar
+    nome de arquivo, nunca antes de gravar em celula da planilha."""
+    if valor is None:
+        return "_"
+    s = re.sub(r'[\\/:*?"<>|\r\n\t]+', "_", str(valor))
+    s = re.sub(r"\s+", " ", s).strip()
+    return s or "_"
 
 
 @dataclass

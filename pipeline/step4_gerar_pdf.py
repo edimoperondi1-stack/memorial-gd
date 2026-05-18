@@ -29,6 +29,8 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+from modelos import sanitize_filename_part
+
 # PDF Watermark configurations (USER ADJUSTABLE)
 # Calibrado para a renderização do LibreOffice (que comprime ~16% verticalmente vs Excel)
 # --- Esquema Unifilar ---
@@ -199,7 +201,7 @@ def gerar_pdf(
     print(f"  [step4] Scale de impressão reduzido para RELACAO DE CARGA(55) e FORMULARIO(50).")
 
     # Nome do PDF
-    nome_pdf = f"{nome_titular.upper().strip()}_UC_{codigo_uc}.pdf"
+    nome_pdf = f"{sanitize_filename_part(nome_titular.upper())}_UC_{sanitize_filename_part(codigo_uc)}.pdf"
     Path(pasta_saida).mkdir(parents=True, exist_ok=True)
     caminho_pdf = os.path.join(pasta_saida, nome_pdf)
 

@@ -20,6 +20,8 @@ from openpyxl.utils import column_index_from_string, get_column_letter
 from openpyxl.worksheet.protection import SheetProtection
 from openpyxl.worksheet.properties import PageSetupProperties
 
+from modelos import sanitize_filename_part
+
 
 # Intervalo copiado pela macro: A1:FA5
 COL_MAX = column_index_from_string("FA")   # 157
@@ -260,8 +262,8 @@ def gerar_xlsx(caminho_preenchido: str, pasta_saida: str, nome_titular: str, cod
     wb.active = wb.index(ws)
 
     # 6. Salvar com o nome correto
-    nome_titular_sanitizado = nome_titular.upper().strip()
-    nome_arquivo = f"{nome_titular_sanitizado}_UC_{codigo_uc}.xlsx"
+    nome_titular_sanitizado = sanitize_filename_part(nome_titular.upper())
+    nome_arquivo = f"{nome_titular_sanitizado}_UC_{sanitize_filename_part(codigo_uc)}.xlsx"
 
     pasta = Path(pasta_saida)
     pasta.mkdir(parents=True, exist_ok=True)

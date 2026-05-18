@@ -11,7 +11,7 @@ import shutil
 import os
 from pathlib import Path
 from openpyxl import load_workbook
-from modelos import DadosProjeto
+from modelos import DadosProjeto, sanitize_filename_part
 
 TEMPLATE_PATH = Path(__file__).parent.parent / "MEMORIAL_GD_v4-22022022 (54).xlsx"
 
@@ -34,7 +34,7 @@ def preencher_template(dados: DadosProjeto, pasta_saida: str = None) -> str:
     pasta = Path(pasta_saida) if pasta_saida else Path("/tmp")
     pasta.mkdir(parents=True, exist_ok=True)
 
-    destino = pasta / f"_temp_{dados.codigo_uc}.xlsx"
+    destino = pasta / f"_temp_{sanitize_filename_part(dados.codigo_uc)}.xlsx"
     shutil.copy2(TEMPLATE_PATH, destino)
 
     wb = load_workbook(str(destino))
