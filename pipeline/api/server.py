@@ -875,6 +875,10 @@ def _json_para_dados(payload: dict) -> DadosProjeto:
 
         # Trafo
         potencia_trafo_kw=float(payload.get("potencia_trafo_kw", 0)),
+        trafo_acoplamento=str(payload.get("trafo_acoplamento", "NÃO")),
+        potencia_autotrafo_kw=float(payload.get("potencia_autotrafo_kw", 0)),
+        trafo_exclusivo=str(payload.get("trafo_exclusivo", "NÃO")),
+        potencia_trafo_exclusivo_kw=float(payload.get("potencia_trafo_exclusivo_kw", 0)),
 
         # Formulário de orçamento (dict de item_key → "X"/"SIM"/etc.)
         formulario_items=payload.get("formulario_items") or {},

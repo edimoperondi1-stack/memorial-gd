@@ -858,6 +858,34 @@
             <div class="field"><label>DPS CC (kA)</label><input id="dps_cc_ka" type="number" step="1" value="0"></div>
             <div class="field"><label>Disjuntor CC (A)</label><input id="disjuntor_cc_a" type="number" step="1" value="0"></div>
         </div>
+
+        <!-- Transformador de acoplamento / exclusivo (perguntas da página 4 do memorial) -->
+        <div class="grid grid-2" style="margin-top:0.75rem">
+            <div class="field">
+                <label>Necessita de autotrafo ou transformador de acoplamento?</label>
+                <div class="toggle-group" style="margin-top:0.5rem">
+                    <label><input type="radio" name="trafo_acoplamento" value="SIM" onchange="toggleAutotrafo()"> Sim</label>
+                    <label><input type="radio" name="trafo_acoplamento" value="NÃO" onchange="toggleAutotrafo()" checked> Não</label>
+                </div>
+            </div>
+            <div class="field" id="field_autotrafo_pot" style="display:none">
+                <label>Potência do autotrafo (kVA)</label>
+                <input id="potencia_autotrafo_kw" type="number" step="1" value="0">
+            </div>
+        </div>
+        <div class="grid grid-2" style="margin-top:0.75rem">
+            <div class="field">
+                <label>Atendimento com trafo exclusivo (Grupo "A" / consumidores rurais)?</label>
+                <div class="toggle-group" style="margin-top:0.5rem">
+                    <label><input type="radio" name="trafo_exclusivo" value="SIM" onchange="toggleTrafoExclusivo()"> Sim</label>
+                    <label><input type="radio" name="trafo_exclusivo" value="NÃO" onchange="toggleTrafoExclusivo()" checked> Não</label>
+                </div>
+            </div>
+            <div class="field" id="field_trafo_excl_pot" style="display:none">
+                <label>Potência do trafo exclusivo (kVA)</label>
+                <input id="potencia_trafo_exclusivo_kw" type="number" step="1" value="0">
+            </div>
+        </div>
     </div>
 
     <!-- DATALISTS para autocomplete de equipamentos -->
@@ -1183,6 +1211,19 @@ function toggleModoCarga() {
     }
 }
 
+// ─── Transformador de acoplamento / exclusivo ─────────────────────────────────
+function toggleAutotrafo() {
+    const sim = document.querySelector('input[name="trafo_acoplamento"]:checked').value === 'SIM';
+    document.getElementById('field_autotrafo_pot').style.display = sim ? '' : 'none';
+    if (!sim) document.getElementById('potencia_autotrafo_kw').value = '0';
+}
+
+function toggleTrafoExclusivo() {
+    const sim = document.querySelector('input[name="trafo_exclusivo"]:checked').value === 'SIM';
+    document.getElementById('field_trafo_excl_pot').style.display = sim ? '' : 'none';
+    if (!sim) document.getElementById('potencia_trafo_exclusivo_kw').value = '0';
+}
+
 function gerarCargaAutomatica() {
     const alvoKVA = parseFloat(document.getElementById('carga_alvo_kva').value);
     if (isNaN(alvoKVA) || alvoKVA <= 0) {
@@ -1422,6 +1463,10 @@ function buildPayload() {
         previsao_ano:          intVal('previsao_ano', 2026),
 
         potencia_trafo_kw:          numVal('potencia_trafo_kw'),
+        trafo_acoplamento:          document.querySelector('input[name="trafo_acoplamento"]:checked').value,
+        potencia_autotrafo_kw:      numVal('potencia_autotrafo_kw'),
+        trafo_exclusivo:            document.querySelector('input[name="trafo_exclusivo"]:checked').value,
+        potencia_trafo_exclusivo_kw: numVal('potencia_trafo_exclusivo_kw'),
         dps_ca_ka:                  numVal('dps_ca_ka'),
         disjuntor_ca_a:             numVal('disjuntor_ca_a'),
         tem_stringbox:              document.querySelector('input[name="tem_stringbox"]:checked').value === 'S',
@@ -1756,6 +1801,11 @@ function collectAllData() {
         _tem_ucs: document.querySelector('input[name="tem_ucs"]:checked')?.value || 'N',
         _modo_carga: document.querySelector('input[name="modo_carga"]:checked')?.value || 'M',
 
+        trafo_acoplamento: document.querySelector('input[name="trafo_acoplamento"]:checked')?.value || 'NÃO',
+        potencia_autotrafo_kw: numVal('potencia_autotrafo_kw'),
+        trafo_exclusivo: document.querySelector('input[name="trafo_exclusivo"]:checked')?.value || 'NÃO',
+        potencia_trafo_exclusivo_kw: numVal('potencia_trafo_exclusivo_kw'),
+
         resp_nome:     val('resp_nome'),
         resp_cpf:      val('resp_cpf'),
         resp_telefone: val('resp_telefone'),
@@ -1892,6 +1942,7 @@ function populateForm(data) {
         'disjuntor_geral_a','potencia_max_disponivel_kw','demanda_contratada_kw','fator_potencia',
         'num_fases','cabos_por_fase','bitola_fase_mm2','bitola_neutro_mm2','bitola_terra_mm2',
         'fuso','coord_x_long','coord_y_lat',
+        'potencia_autotrafo_kw','potencia_trafo_exclusivo_kw',
         'resp_nome','resp_cpf','resp_telefone','resp_email','resp_endereco',
     ];
     campos.forEach(id => {
@@ -1914,6 +1965,16 @@ function populateForm(data) {
     // Radio: modo_carga — força modo manual ao carregar
     const radioManual = document.querySelector('input[name="modo_carga"][value="M"]');
     if (radioManual) { radioManual.checked = true; toggleModoCarga(); }
+
+    // Radios: transformador de acoplamento / exclusivo
+    const ta = data.trafo_acoplamento || 'NÃO';
+    const rTa = document.querySelector(`input[name="trafo_acoplamento"][value="${ta}"]`);
+    if (rTa) rTa.checked = true;
+    toggleAutotrafo();
+    const te = data.trafo_exclusivo || 'NÃO';
+    const rTe = document.querySelector(`input[name="trafo_exclusivo"][value="${te}"]`);
+    if (rTe) rTe.checked = true;
+    toggleTrafoExclusivo();
 
     // Tabela painéis
     document.getElementById('paineis-body').innerHTML = '';

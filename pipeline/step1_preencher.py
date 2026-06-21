@@ -156,9 +156,13 @@ def _preencher_md_solar(wb, dados: DadosProjeto):
     if dados.observacoes:
         ws["C23"] = dados.observacoes
 
-    # Trafo acoplamento / exclusivo
+    # Trafo acoplamento / exclusivo (perguntas da página 4 / MD-SOLAR)
     ws["J58"] = dados.trafo_acoplamento
+    if str(dados.trafo_acoplamento).strip().upper() == "SIM" and dados.potencia_autotrafo_kw:
+        ws["J59"] = dados.potencia_autotrafo_kw
     ws["J61"] = dados.trafo_exclusivo
+    if str(dados.trafo_exclusivo).strip().upper() == "SIM" and dados.potencia_trafo_exclusivo_kw:
+        ws["J62"] = dados.potencia_trafo_exclusivo_kw
 
     # Painéis (até 10 linhas, começando na linha 31)
     for i, painel in enumerate(dados.paineis[:10]):

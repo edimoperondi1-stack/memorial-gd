@@ -115,8 +115,10 @@ class DadosProjeto:
     # ── 6. TRAFO / CONFIGURAÇÃO EXTRA ───────────────────────────────────────
     potencia_trafo_kw: float = 0.0
     num_hastes: int = 3
-    trafo_acoplamento: str = "NÃO"     # SIM | NÃO
-    trafo_exclusivo: str = "NÃO"      # SIM | NÃO
+    trafo_acoplamento: str = "NÃO"     # SIM | NÃO  → MD-SOLAR J58
+    potencia_autotrafo_kw: float = 0.0  # potência do autotrafo/acoplamento → MD-SOLAR J59
+    trafo_exclusivo: str = "NÃO"      # SIM | NÃO  → MD-SOLAR J61
+    potencia_trafo_exclusivo_kw: float = 0.0  # potência do trafo exclusivo → MD-SOLAR J62
     gd_ja_instalado: str = "NÃO"      # SIM | NÃO
     previsao_mes: str = "JANEIRO"      # JANEIRO … DEZEMBRO
     previsao_ano: int = 2026
