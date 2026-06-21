@@ -1224,6 +1224,16 @@ function toggleTrafoExclusivo() {
     if (!sim) document.getElementById('potencia_trafo_exclusivo_kw').value = '0';
 }
 
+// ─── Stringbox (DPS CC / Disjuntor CC) ────────────────────────────────────────
+function toggleStringbox() {
+    const sim = document.querySelector('input[name="tem_stringbox"]:checked').value === 'S';
+    document.getElementById('grid_stringbox').style.display = sim ? '' : 'none';
+    if (!sim) {
+        document.getElementById('dps_cc_ka').value = '0';
+        document.getElementById('disjuntor_cc_a').value = '0';
+    }
+}
+
 function gerarCargaAutomatica() {
     const alvoKVA = parseFloat(document.getElementById('carga_alvo_kva').value);
     if (isNaN(alvoKVA) || alvoKVA <= 0) {
