@@ -36,6 +36,10 @@ ENV LC_NUMERIC=pt_BR.UTF-8
 ENV SAL_USE_VCLPLUGIN=svp
 ENV HOME=/app
 
+# Logs do Python sem buffer — essencial para enxergar a saída do app nos
+# logs do Hugging Face (o docker-compose define isso, mas o HF usa só o Dockerfile)
+ENV PYTHONUNBUFFERED=1
+
 # ── Copiar código ─────────────────────────────────────────────────────
 WORKDIR /app
 
