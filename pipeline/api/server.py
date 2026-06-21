@@ -227,13 +227,15 @@ class APIHandler(SimpleHTTPRequestHandler):
             token = _get_token_do_request(self)
             usuario = _verificar_sessao(token) if token else None
             if not usuario:
-                # API → 401; página → redireciona para /login
+                # API → 401; página → serve o login com 200 (sem redirect).
+                # Servir login.html direto, em vez de 302 → /login, garante que
+                # GET / responda 200 — que é o que o health check do Hugging Face
+                # exige para marcar o Space como "Running". Um 302 na raiz deixa
+                # o Space preso em "Starting" (app roda, mas readiness nunca passa).
                 if path.startswith("/api/"):
                     self._json_response(401, {"error": "Não autenticado"})
                 else:
-                    self.send_response(302)
-                    self.send_header("Location", "/login")
-                    self.end_headers()
+                    self._serve_file(STATIC_DIR / "login.html", "text/html")
                 return
 
         if path == "/login":
