@@ -227,15 +227,19 @@ def _preencher_fsa(wb, dados: DadosProjeto):
     ws["D20"] = dados.tipo_fonte        # Tipo da Fonte (ex: "SOLAR FOTOVOLTAICA")
     ws["H20"] = dados.tipo_geracao      # Tipo de Geração (H20:K20 merged, dentro do print area)
 
-    # 4. Documentações a serem anexadas no AWGPE (checkmarks)
-    # Print area = B1:K38, então col A é invisível. Usamos coluna K.
-    # Itens 1, 2, 3 são sempre selecionados; item 5+ só com UCs beneficiárias
-    _safe_write(ws, "K22", "X")  # 1. Registro conselho profissional
-    _safe_write(ws, "K23", "X")  # 2. Diagrama Unifilar
-    _safe_write(ws, "K24", "X")  # 3. Certificado de conformidade
-    # Item 4 (registro ANEEL) — não precisa
-    if getattr(dados, "ucs_beneficiarias", False):
-        _safe_write(ws, "K26", "X")  # 5. Lista de UCs participantes
+    # 4. Documentações a serem anexadas no AWGPE (checkmarks) — SOMENTE nos
+    # formulários FSA MICRO (Solicitação de Acesso). No "Orçamento de Conexão"
+    # (aba SOLICITACAO) as células K22/K23/K24 pertencem às MESCLAS dos CONTATOS
+    # (D22:K22 Empresa, G23:K23 E-mail, G24:K24 LINK GISA); escrever "X" nelas
+    # sobrescrevia o VLOOKUP dos contatos (saíam como "X"). O checklist do
+    # Orçamento de Conexão fica na aba FORMULARIO (página 3).
+    if aba != "SOLICITACAO":
+        _safe_write(ws, "K22", "X")  # 1. Registro conselho profissional
+        _safe_write(ws, "K23", "X")  # 2. Diagrama Unifilar
+        _safe_write(ws, "K24", "X")  # 3. Certificado de conformidade
+        # Item 4 (registro ANEEL) — não precisa
+        if getattr(dados, "ucs_beneficiarias", False):
+            _safe_write(ws, "K26", "X")  # 5. Lista de UCs participantes
 
     # 6. Dados do Solicitante (engenheiro responsável)
     _safe_write(ws, "D34", dados.resp_nome)
