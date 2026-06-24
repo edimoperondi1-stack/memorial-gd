@@ -866,8 +866,11 @@ def _json_para_dados(payload: dict) -> DadosProjeto:
         resp_email=str(payload.get("resp_email", "")),
         resp_endereco=str(payload.get("resp_endereco", "")),
 
-        # Tipo de formulário
-        tipo_fsa=str(payload.get("tipo_fsa", "SOLICITACAO")),
+        # Tipo de formulário — padronizado em "Orçamento de Conexão" (aba SOLICITACAO).
+        # Os formulários antigos "FSA MICRO ..." (Solicitação de Acesso) foram aposentados
+        # pela Energisa; gerá-los causava indeferimento e ativava o bug "AÉREOAÉREO"
+        # (dois formulários preenchidos => CONFIG!X2 concatenava o ramal duas vezes).
+        tipo_fsa="SOLICITACAO",
 
         # Previsão
         previsao_mes=str(payload.get("previsao_mes", "JANEIRO")),
