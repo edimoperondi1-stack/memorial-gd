@@ -833,7 +833,8 @@ def _json_para_dados(payload: dict) -> DadosProjeto:
         # Detalhes técnicos
         tipo_padrao=str(payload.get("tipo_padrao", payload["tipo_conexao"])),
         nivel_tensao_v=str(payload.get("nivel_tensao_v", payload["tensao_atendimento_v"])),
-        potencia_max_disponivel_kw=float(payload.get("potencia_max_disponivel_kw", payload["potencia_instalada_kw"])),
+        # Em branco por padrão (igual ao oficial) — a distribuidora define depois.
+        potencia_max_disponivel_kw=float(payload.get("potencia_max_disponivel_kw") or 0),
         disjuntor_geral_a=int(payload["disjuntor_geral_a"]),
         fator_potencia=float(payload.get("fator_potencia", 0.92)),
         demanda_contratada_kw=float(payload.get("demanda_contratada_kw", 1.0)),

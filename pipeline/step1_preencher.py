@@ -119,7 +119,10 @@ def _preencher_md_solar(wb, dados: DadosProjeto):
     # Padrão elétrico
     ws["B13"] = dados.tipo_padrao
     ws["D13"] = dados.nivel_tensao_v
-    ws["G13"] = dados.potencia_max_disponivel_kw
+    # Potência máx. disponibilizada: só preenche se informada; senão fica em
+    # branco (a distribuidora define depois), igual ao formulário oficial.
+    if dados.potencia_max_disponivel_kw:
+        ws["G13"] = dados.potencia_max_disponivel_kw
     ws["B15"] = dados.disjuntor_geral_a
     ws["D15"] = dados.fator_potencia
     ws["G15"] = dados.demanda_contratada_kw

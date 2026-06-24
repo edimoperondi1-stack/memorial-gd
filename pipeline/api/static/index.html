@@ -778,7 +778,7 @@
         </div>
         <div class="grid grid-4" style="margin-top:0.75rem">
             <div class="field"><label>Disjuntor Geral (A) *</label><input id="disjuntor_geral_a" type="number" value="40" required></div>
-            <div class="field"><label>Potência Disponível (kW)</label><input id="potencia_max_disponivel_kw" type="number" step="0.1" placeholder="padrão = instalada"></div>
+            <div class="field"><label>Potência Disponível (kW)</label><input id="potencia_max_disponivel_kw" type="number" step="0.1" placeholder="opcional — em branco"></div>
             <div class="field"><label>Demanda Contratada (kW)</label><input id="demanda_contratada_kw" type="number" step="0.1" value="1.0"></div>
             <div class="field"><label>Fator de Potência</label><input id="fator_potencia" type="number" step="0.01" value="0.92"></div>
         </div>
@@ -1482,7 +1482,7 @@ function buildPayload() {
         disjuntor_cc_a:             numVal('disjuntor_cc_a'),
 
         disjuntor_geral_a:          intVal('disjuntor_geral_a', 40),
-        potencia_max_disponivel_kw: numVal('potencia_max_disponivel_kw') || numVal('potencia_instalada_kw'),
+        potencia_max_disponivel_kw: numVal('potencia_max_disponivel_kw'),
         demanda_contratada_kw:      numVal('demanda_contratada_kw', 1.0),
         fator_potencia:             numVal('fator_potencia', 0.92),
         num_fases:                  intVal('num_fases', 2),
