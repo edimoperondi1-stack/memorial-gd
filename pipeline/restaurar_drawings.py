@@ -21,6 +21,39 @@ from pathlib import Path
 import xml.etree.ElementTree as ET
 
 
+def _remover_shapes_ui(drawing_xml: str) -> str:
+    """Remove os botões/callouts de UI do template (shapes com macro ou com a cor
+    amarela Energisa D4D823) de um xl/drawings/drawingN.xml.
+
+    No Excel esses elementos (Limpar, Avançar, textos explicativos) não aparecem
+    na impressão, mas o LibreOffice renderiza fragmentos deles na borda da área de
+    impressão (a "diagonal"/triângulo amarelo no PDF). Preserva imagens (<xdr:pic>)
+    e shapes de conteúdo sem macro e sem a cor de UI (ex.: o diagrama unifilar, que
+    é desenhado com centenas de shapes brancas)."""
+    macro_re = re.compile(r'macro="[^"]+"')
+    for tag in ("twoCellAnchor", "oneCellAnchor"):
+        pat = re.compile(rf"<xdr:{tag}\b.*?</xdr:{tag}>", re.S)
+
+        def _repl(m):
+            bloco = m.group(0)
+            eh_shape = "<xdr:sp" in bloco
+            eh_ui = ("D4D823" in bloco) or bool(macro_re.search(bloco))
+            return "" if (eh_shape and eh_ui) else bloco
+
+        drawing_xml = pat.sub(_repl, drawing_xml)
+    return drawing_xml
+
+
+def _filtrar_se_drawing(nome_arquivo: str, dados: bytes) -> bytes:
+    """Aplica _remover_shapes_ui se o arquivo for um xl/drawings/drawingN.xml."""
+    if nome_arquivo.startswith("xl/drawings/") and nome_arquivo.endswith(".xml"):
+        try:
+            return _remover_shapes_ui(dados.decode("utf-8")).encode("utf-8")
+        except Exception as e:
+            print(f"  [restaurar_drawings] AVISO: falha ao filtrar {nome_arquivo}: {e}")
+    return dados
+
+
 def _map_sheet_names_to_files(z: zipfile.ZipFile) -> dict:
     """Retorna um dict {nome_aba: 'xl/worksheets/sheetX.xml'} lendo workbook.xml e _rels."""
     mapa = {}
@@ -166,7 +199,7 @@ def restaurar_drawings(caminho_preenchido: str, caminho_template: str) -> str:
         # Copiar arquivos do template (drawings, media)
         for f in arquivos_do_template:
             if f not in arquivos_escritos:
-                z_out.writestr(f, z_tpl.read(f))
+                z_out.writestr(f, _filtrar_se_drawing(f, z_tpl.read(f)))
                 arquivos_escritos.add(f)
 
         # Copiar arquivos do template que não existem no source
@@ -175,7 +208,7 @@ def restaurar_drawings(caminho_preenchido: str, caminho_template: str) -> str:
             if f not in arquivos_escritos:
                 for p in prefixos_restaurar:
                     if f.startswith(p):
-                        z_out.writestr(f, z_tpl.read(f))
+                        z_out.writestr(f, _filtrar_se_drawing(f, z_tpl.read(f)))
                         arquivos_escritos.add(f)
 
         # Reconstruir [Content_Types].xml

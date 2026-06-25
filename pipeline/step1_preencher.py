@@ -113,8 +113,10 @@ def _preencher_md_solar(wb, dados: DadosProjeto):
     ws["K10"] = dados.cep
     ws["C11"] = dados.telefone
     ws["G11"] = dados.celular
-    ws["J11"] = dados.num_fases
-    ws["K11"] = dados.tipo_ramal
+    # NÃO escrever J11/K11: são os RÓTULOS "Nº de fases:" e "Ramal". Os valores
+    # vêm de fórmulas no template — J12 calcula o nº de fases a partir do tipo de
+    # padrão (B13) e K12 = CONFIG!X2 (o ramal). Escrever J11/K11 sobrescrevia os
+    # rótulos (saía "3"/"AÉREO" no lugar de "Nº de fases:"/"Ramal").
 
     # Padrão elétrico
     ws["B13"] = dados.tipo_padrao
