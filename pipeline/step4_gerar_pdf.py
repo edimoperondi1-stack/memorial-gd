@@ -218,8 +218,9 @@ def gerar_pdf(
     _patch_page_scale(tmp_xlsx, {
         "RELACAO DE CARGA": 55,
         "FORMULARIO": 50,
+        "GD EXISTENTE": 52,   # template=63; transbordava p/ 2ª página no Linux
     })
-    print(f"  [step4] Scale de impressão reduzido para RELACAO DE CARGA(55) e FORMULARIO(50).")
+    print(f"  [step4] Scale de impressão reduzido: RELACAO DE CARGA(55), FORMULARIO(50), GD EXISTENTE(52).")
 
     # Nome do PDF
     nome_pdf = f"{sanitize_filename_part(nome_titular.upper())}_UC_{sanitize_filename_part(codigo_uc)}.pdf"
