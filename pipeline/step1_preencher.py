@@ -44,6 +44,7 @@ def preencher_template(dados: DadosProjeto, pasta_saida: str = None) -> str:
     _preencher_relacao_carga(wb, dados)
     _preencher_fsa(wb, dados)
     _preencher_formulario(wb, dados)
+    _preencher_gd_existente(wb, dados)
 
     wb.save(str(destino))
     wb.close()
@@ -312,3 +313,34 @@ def _preencher_formulario(wb, dados: DadosProjeto):
         if row and valor:
             coord = f"K{row}"
             _safe_write(ws, coord, valor)
+
+
+def _preencher_gd_existente(wb, dados: DadosProjeto):
+    """Preenche a aba GD EXISTENTE (geração já instalada na UC).
+
+    Painéis existentes: linhas 7-11 (C=Qtd, D=Fabricante, G=Modelo, J=Área, K=Pot.).
+    Inversores existentes: linhas 17-21 (C=Qtd, D=Fabricante, G=Modelo, J=Pot., L=Tensão).
+    Os subtotais (L7:L11 e K17:K21) e os totais são fórmulas do template — não tocar.
+    A soma na potência total de geração (pág. 1) é automática via CONFIG!U34."""
+    if "GD EXISTENTE" not in wb.sheetnames:
+        return
+    if not (dados.paineis_existentes or dados.inversores_existentes):
+        return
+
+    ws = wb["GD EXISTENTE"]
+
+    for i, painel in enumerate(dados.paineis_existentes[:5]):
+        row = 7 + i
+        ws.cell(row=row, column=3).value  = painel.quantidade    # C
+        _safe_write(ws, f"D{row}", painel.fabricante)            # D (merge D:F)
+        _safe_write(ws, f"G{row}", painel.modelo)                # G (merge G:I)
+        ws.cell(row=row, column=10).value = painel.area_m2       # J
+        ws.cell(row=row, column=11).value = painel.potencia_kw   # K
+
+    for i, inv in enumerate(dados.inversores_existentes[:5]):
+        row = 17 + i
+        ws.cell(row=row, column=3).value  = inv.quantidade       # C
+        _safe_write(ws, f"D{row}", inv.fabricante)               # D (merge D:F)
+        _safe_write(ws, f"G{row}", inv.modelo)                   # G (merge G:I)
+        ws.cell(row=row, column=10).value = inv.potencia_kw      # J
+        ws.cell(row=row, column=12).value = inv.tensao_nominal_v # L

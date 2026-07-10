@@ -944,11 +944,62 @@
         <button class="btn-add" onclick="addInversor()">+ Adicionar inversor</button>
     </div>
 
-    <!-- 7. RELAÇÃO DE CARGA -->
+    <!-- 7. GERAÇÃO EXISTENTE (GD já instalada) -->
+    <div class="section">
+        <div class="section-title">
+            <span class="section-badge">7</span>
+            Geração Existente
+            <span class="section-hint">sistema GD já instalado na UC — soma na potência total</span>
+        </div>
+
+        <div style="margin-bottom: 0.5rem">
+            <label style="display:block; margin-bottom:0.5rem; color:var(--text)">Sistema GD já instalado?</label>
+            <div class="toggle-group">
+                <label class="toggle-label">
+                    <input type="radio" name="tem_gd_existente" value="N" checked onchange="toggleGdExistente()">
+                    Não
+                </label>
+                <label class="toggle-label">
+                    <input type="radio" name="tem_gd_existente" value="S" onchange="toggleGdExistente()">
+                    Sim
+                </label>
+            </div>
+        </div>
+
+        <div id="gd-existente-container" class="hidden">
+            <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.8rem">
+                Informe os equipamentos já instalados (máx. 5 de cada). Eles saem na página
+                "Formulário para Geração Existente" do PDF e somam na potência total de geração.
+            </div>
+            <div style="font-weight:600; margin-bottom:0.4rem">Painéis existentes</div>
+            <table class="equip-table">
+                <thead><tr>
+                    <th style="width:60px">Qtd</th><th>Fabricante</th><th>Modelo</th>
+                    <th style="width:90px">Área (m²)</th><th style="width:90px">Pot. (kW)</th><th style="width:36px"></th>
+                </tr></thead>
+                <tbody id="paineis-exist-body">
+                </tbody>
+            </table>
+            <button class="btn-add" onclick="addPainelExistente()">+ Adicionar painel existente</button>
+
+            <div style="font-weight:600; margin:1rem 0 0.4rem">Inversores existentes</div>
+            <table class="equip-table">
+                <thead><tr>
+                    <th style="width:60px">Qtd</th><th>Fabricante</th><th>Modelo</th>
+                    <th style="width:90px">Pot. (kW)</th><th style="width:80px">Tensão (V)</th><th style="width:36px"></th>
+                </tr></thead>
+                <tbody id="inversores-exist-body">
+                </tbody>
+            </table>
+            <button class="btn-add" onclick="addInversorExistente()">+ Adicionar inversor existente</button>
+        </div>
+    </div>
+
+    <!-- 8. RELAÇÃO DE CARGA -->
     <div class="section">
         <div class="section-title" style="display:flex; justify-content:space-between">
             <div>
-                <span class="section-badge">7</span>
+                <span class="section-badge">8</span>
                 Relação de Carga
             </div>
             <div class="toggle-group" style="margin:0">
@@ -1000,10 +1051,10 @@
         <button class="btn-add" onclick="addCarga()">+ Adicionar equipamento</button>
     </div>
 
-    <!-- 8. UCs BENEFICIÁRIAS -->
+    <!-- 9. UCs BENEFICIÁRIAS -->
     <div class="section">
         <div class="section-title">
-            <span class="section-badge">8</span>
+            <span class="section-badge">9</span>
             UCs Beneficiárias
             <span class="section-hint">opcional — Autoconsumo remoto / Múltiplas UCs</span>
         </div>
@@ -1036,10 +1087,10 @@
         </div>
     </div>
 
-    <!-- 9. RESPONSÁVEL TÉCNICO -->
+    <!-- 10. RESPONSÁVEL TÉCNICO -->
     <div class="section">
         <div class="section-title">
-            <span class="section-badge">9</span>
+            <span class="section-badge">10</span>
             Responsável Técnico
         </div>
         <div class="grid grid-3">
@@ -1058,7 +1109,7 @@
     <!-- 10. FORMULÁRIO DE ORÇAMENTO -->
     <div class="section" id="section-formulario">
         <div class="section-title">
-            <span class="section-badge">10</span>
+            <span class="section-badge">11</span>
             Opções do Formulário de Orçamento
             <span class="section-hint">marcadas com "X" ou "SIM"</span>
         </div>
@@ -1232,6 +1283,73 @@ function toggleStringbox() {
     }
 }
 
+// ─── Geração Existente (GD já instalada) ──────────────────────────────────────
+function toggleGdExistente() {
+    const sim = document.querySelector('input[name="tem_gd_existente"]:checked').value === 'S';
+    const container = document.getElementById('gd-existente-container');
+    if (sim) {
+        container.classList.remove('hidden');
+        if (document.querySelectorAll('#paineis-exist-body tr').length === 0) addPainelExistente();
+        if (document.querySelectorAll('#inversores-exist-body tr').length === 0) addInversorExistente();
+    } else {
+        container.classList.add('hidden');
+        document.getElementById('paineis-exist-body').innerHTML = '';
+        document.getElementById('inversores-exist-body').innerHTML = '';
+    }
+}
+
+function addPainelExistente() {
+    const tbody = document.getElementById('paineis-exist-body');
+    if (tbody.children.length >= 5) { alert('Máximo de 5 painéis existentes (limite da planilha).'); return; }
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="number" class="pe-qty" value="1" style="width:60px"></td>
+        <td><input class="pe-fab" placeholder="Fabricante" list="dl-painel-fab"></td>
+        <td><input class="pe-mod" placeholder="Modelo" list="dl-painel-mod"></td>
+        <td><input type="number" class="pe-area" step="0.01" placeholder="m²"></td>
+        <td><input type="number" class="pe-pot" step="0.001" placeholder="kW"></td>
+        <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
+    tbody.appendChild(row);
+    row.querySelector('.pe-fab').focus();
+}
+
+function addInversorExistente() {
+    const tbody = document.getElementById('inversores-exist-body');
+    if (tbody.children.length >= 5) { alert('Máximo de 5 inversores existentes (limite da planilha).'); return; }
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="number" class="ie-qty" value="1" style="width:60px"></td>
+        <td><input class="ie-fab" placeholder="Fabricante" list="dl-inversor-fab"></td>
+        <td><input class="ie-mod" placeholder="Modelo" list="dl-inversor-mod"></td>
+        <td><input type="number" class="ie-pot" step="0.1" placeholder="kW"></td>
+        <td><input type="number" class="ie-ten" step="1" value="220"></td>
+        <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">×</button></td>`;
+    tbody.appendChild(row);
+    row.querySelector('.ie-fab').focus();
+}
+
+function collectPaineisExistentes() {
+    if (document.querySelector('input[name="tem_gd_existente"]:checked').value === 'N') return [];
+    return Array.from(document.querySelectorAll('#paineis-exist-body tr')).map(r => ({
+        quantidade: parseInt(r.querySelector('.pe-qty').value) || 0,
+        fabricante: r.querySelector('.pe-fab').value.trim(),
+        modelo:     r.querySelector('.pe-mod').value.trim(),
+        area_m2:    parseFloat(r.querySelector('.pe-area').value) || 0,
+        potencia_kw: parseFloat(r.querySelector('.pe-pot').value) || 0,
+    })).filter(p => p.quantidade > 0 && p.fabricante);
+}
+
+function collectInversoresExistentes() {
+    if (document.querySelector('input[name="tem_gd_existente"]:checked').value === 'N') return [];
+    return Array.from(document.querySelectorAll('#inversores-exist-body tr')).map(r => ({
+        quantidade:     parseInt(r.querySelector('.ie-qty').value) || 0,
+        fabricante:     r.querySelector('.ie-fab').value.trim(),
+        modelo:         r.querySelector('.ie-mod').value.trim(),
+        potencia_kw:    parseFloat(r.querySelector('.ie-pot').value) || 0,
+        tensao_nominal_v: parseFloat(r.querySelector('.ie-ten').value) || 0,
+    })).filter(i => i.quantidade > 0 && i.fabricante);
+}
+
 function gerarCargaAutomatica() {
     const alvoKVA = parseFloat(document.getElementById('carga_alvo_kva').value);
     if (isNaN(alvoKVA) || alvoKVA <= 0) {
@@ -1394,6 +1512,10 @@ function validar() {
 
     if (collectPaineis().length === 0) erros.push('Pelo menos 1 painel solar');
     if (collectInversores().length === 0) erros.push('Pelo menos 1 inversor');
+    if (document.querySelector('input[name="tem_gd_existente"]:checked').value === 'S'
+        && collectPaineisExistentes().length === 0 && collectInversoresExistentes().length === 0) {
+        erros.push('Geração existente marcada como "Sim" mas sem equipamentos informados');
+    }
 
     return erros;
 }
@@ -1498,6 +1620,8 @@ function buildPayload() {
         inversores:        collectInversores(),
         carga_instalada:   collectCarga(),
         ucs_beneficiarias: collectUCs(),
+        paineis_existentes:    collectPaineisExistentes(),
+        inversores_existentes: collectInversoresExistentes(),
 
         resp_nome:     val('resp_nome'),
         resp_cpf:      val('resp_cpf'),
@@ -1806,8 +1930,11 @@ function collectAllData() {
         inversores:        collectInversores(),
         carga_instalada:   collectCarga(),
         ucs_beneficiarias: collectUCs(),
+        paineis_existentes:    collectPaineisExistentes(),
+        inversores_existentes: collectInversoresExistentes(),
         _tem_ucs: document.querySelector('input[name="tem_ucs"]:checked')?.value || 'N',
         _modo_carga: document.querySelector('input[name="modo_carga"]:checked')?.value || 'M',
+        _tem_gd_existente: document.querySelector('input[name="tem_gd_existente"]:checked')?.value || 'N',
 
         trafo_acoplamento: document.querySelector('input[name="trafo_acoplamento"]:checked')?.value || 'NÃO',
         potencia_autotrafo_kw: numVal('potencia_autotrafo_kw'),
@@ -1983,6 +2110,37 @@ function populateForm(data) {
     const rTe = document.querySelector(`input[name="trafo_exclusivo"][value="${te}"]`);
     if (rTe) rTe.checked = true;
     toggleTrafoExclusivo();
+
+    // Radio + tabelas: geração existente (GD já instalada)
+    const temGdExist = data._tem_gd_existente ||
+        ((data.paineis_existentes?.length || data.inversores_existentes?.length) ? 'S' : 'N');
+    const rGd = document.querySelector(`input[name="tem_gd_existente"][value="${temGdExist}"]`);
+    if (rGd) rGd.checked = true;
+    document.getElementById('gd-existente-container').classList.toggle('hidden', temGdExist !== 'S');
+    document.getElementById('paineis-exist-body').innerHTML = '';
+    (data.paineis_existentes || []).forEach(p => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" class="pe-qty" value="${p.quantidade||0}" style="width:60px"></td>
+            <td><input class="pe-fab" value="${p.fabricante||''}" list="dl-painel-fab"></td>
+            <td><input class="pe-mod" value="${p.modelo||''}" list="dl-painel-mod"></td>
+            <td><input type="number" class="pe-area" step="0.01" value="${p.area_m2||0}"></td>
+            <td><input type="number" class="pe-pot" step="0.001" value="${p.potencia_kw||0}"></td>
+            <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">&times;</button></td>`;
+        document.getElementById('paineis-exist-body').appendChild(row);
+    });
+    document.getElementById('inversores-exist-body').innerHTML = '';
+    (data.inversores_existentes || []).forEach(inv => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><input type="number" class="ie-qty" value="${inv.quantidade||0}" style="width:60px"></td>
+            <td><input class="ie-fab" value="${inv.fabricante||''}" list="dl-inversor-fab"></td>
+            <td><input class="ie-mod" value="${inv.modelo||''}" list="dl-inversor-mod"></td>
+            <td><input type="number" class="ie-pot" step="0.1" value="${inv.potencia_kw||0}"></td>
+            <td><input type="number" class="ie-ten" step="1" value="${inv.tensao_nominal_v||0}"></td>
+            <td><button class="btn-remove" onclick="this.closest('tr').remove()" title="Remover">&times;</button></td>`;
+        document.getElementById('inversores-exist-body').appendChild(row);
+    });
 
     // Tabela painéis
     document.getElementById('paineis-body').innerHTML = '';

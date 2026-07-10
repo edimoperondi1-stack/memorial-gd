@@ -127,6 +127,12 @@ class DadosProjeto:
     paineis: list = field(default_factory=list)      # lista de Painel
     inversores: list = field(default_factory=list)   # lista de Inversor
 
+    # ── 7b. GERAÇÃO EXISTENTE (GD já instalada) ─────────────────────────────
+    # Preenchem a aba "GD EXISTENTE" (até 5 painéis + 5 inversores). A soma na
+    # potência total de geração é automática: CONFIG!U34 = geração nova + existente.
+    paineis_existentes: list = field(default_factory=list)     # lista de Painel
+    inversores_existentes: list = field(default_factory=list)  # lista de Inversor
+
     # ── 8. UCs BENEFICIÁRIAS (opcional) ─────────────────────────────────────
     ucs_beneficiarias: list = field(default_factory=list)  # lista de UCBeneficiaria
 

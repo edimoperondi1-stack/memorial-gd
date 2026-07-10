@@ -781,6 +781,26 @@ def _json_para_dados(payload: dict) -> DadosProjeto:
             tensao_nominal_v=float(inv.get("tensao_nominal_v", 0)),
         ))
 
+    # Converter geração existente (GD já instalada) — aba GD EXISTENTE
+    paineis_existentes = []
+    for p in payload.get("paineis_existentes", []):
+        paineis_existentes.append(Painel(
+            quantidade=int(p["quantidade"]),
+            fabricante=str(p["fabricante"]),
+            modelo=str(p["modelo"]),
+            area_m2=float(p.get("area_m2", 0)),
+            potencia_kw=float(p.get("potencia_kw", 0)),
+        ))
+    inversores_existentes = []
+    for inv in payload.get("inversores_existentes", []):
+        inversores_existentes.append(Inversor(
+            quantidade=int(inv["quantidade"]),
+            fabricante=str(inv["fabricante"]),
+            modelo=str(inv["modelo"]),
+            potencia_kw=float(inv.get("potencia_kw", 0)),
+            tensao_nominal_v=float(inv.get("tensao_nominal_v", 0)),
+        ))
+
     # Converter UCs beneficiárias
     ucs = []
     for uc in payload.get("ucs_beneficiarias", []):
@@ -859,6 +879,12 @@ def _json_para_dados(payload: dict) -> DadosProjeto:
         inversores=inversores,
         ucs_beneficiarias=ucs,
         carga_instalada=carga,
+
+        # Geração existente — "Sistema GD já instalado?" (MD-SOLAR H22) vira SIM
+        # automaticamente quando há equipamentos existentes informados
+        paineis_existentes=paineis_existentes,
+        inversores_existentes=inversores_existentes,
+        gd_ja_instalado="SIM" if (paineis_existentes or inversores_existentes) else "NÃO",
 
         # Responsável técnico
         resp_nome=str(payload.get("resp_nome", "")),

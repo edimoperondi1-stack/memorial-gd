@@ -136,6 +136,21 @@ def _tem_ucs_beneficiarias(caminho_xlsx: str) -> bool:
         wb.close()
 
 
+def _tem_gd_existente(caminho_xlsx: str) -> bool:
+    """Verifica se há geração existente preenchida na aba GD EXISTENTE
+    (quantidade de painel em C7 ou de inversor em C17).
+    Usa openpyxl apenas para LEITURA (não salva, não modifica)."""
+    from openpyxl import load_workbook
+    wb = load_workbook(caminho_xlsx, data_only=True)
+    try:
+        if "GD EXISTENTE" not in wb.sheetnames:
+            return False
+        ws = wb["GD EXISTENTE"]
+        return any(ws[c].value not in (None, "", 0) for c in ("C7", "C17"))
+    finally:
+        wb.close()
+
+
 def gerar_pdf(
     caminho_preenchido: str,
     pasta_saida: str,
@@ -163,6 +178,12 @@ def gerar_pdf(
 
     # Montar lista de abas para o PDF
     abas = list(ABAS_PDF[tipo_fsa])
+    if _tem_gd_existente(caminho_preenchido):
+        # Página da geração existente entra após FORMULARIO (mesma ordem das
+        # abas no template: FORMULARIO → GD EXISTENTE → MD-SOLAR)
+        pos = abas.index("FORMULARIO") + 1 if "FORMULARIO" in abas else len(abas)
+        abas.insert(pos, "GD EXISTENTE")
+        print(f"  [step4] Geração existente detectada — incluindo GD EXISTENTE na saída.")
     if _tem_ucs_beneficiarias(caminho_preenchido):
         abas.append("UC BENEFICIARIAS")
         print(f"  [step4] UCs beneficiárias detectadas — incluindo na saída.")
