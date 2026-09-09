@@ -10,6 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Template xlsx/docx e diagrama png estao em LFS: sem isto o checkout
+          # traz ponteiros de ~130 bytes e o upload quebraria o Space.
+          lfs: true
+
+      - name: Conferir que os arquivos LFS vieram inteiros
+        run: |
+          set -e
+          for f in "MEMORIAL_GD_v4-22022022 (54).xlsx" "PROCURAÇÃO ENERGISA MT - CERÂMICA PROGRESSO.docx"; do
+            tamanho=$(stat -c %s "$f")
+            echo "$f -> $tamanho bytes"
+            if [ "$tamanho" -lt 1000000 ]; then
+              echo "ERRO: '$f' parece ponteiro LFS, abortando para nao corromper o Space."
+              exit 1
+            fi
+          done
 
       - name: Install huggingface_hub
         run: pip install huggingface_hub
