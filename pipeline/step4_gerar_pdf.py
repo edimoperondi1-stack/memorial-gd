@@ -26,6 +26,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import unicodedata
 import zipfile
 from pathlib import Path
 
@@ -48,6 +49,12 @@ PLACA_POS_X = 265          # Posição horizontal (pts) — -10 esquerda (275→
 PLACA_POS_Y = 290          # Posição vertical (pts) — +50 pra cima (240→290)
 PLACA_WIDTH = 80           # Largura (pts)
 PLACA_HEIGHT = 50          # Altura (pts)
+
+# Aba da relação de carga — sai no PDF do memorial e também como PDF avulso.
+ABA_RELACAO_CARGA = "RELACAO DE CARGA"
+# Título da célula D3 dessa aba, normalizado. Não aparece em nenhuma outra aba
+# exportada, então serve para localizar a página dela no PDF já gerado.
+MARCA_RELACAO_CARGA = "FORMULARIO DE RELACAO DE CARGA"
 
 # Mapeamento tipo_fsa → abas do PDF (sem UC BENEFICIARIAS)
 ABAS_PDF = {
@@ -151,12 +158,117 @@ def _tem_gd_existente(caminho_xlsx: str) -> bool:
         wb.close()
 
 
+def montar_abas(caminho_preenchido: str, tipo_fsa: str) -> list:
+    """
+    Monta a lista de abas que entram no PDF, na ordem do template.
+
+    Args:
+        caminho_preenchido: .xlsx com fórmulas recalculadas.
+        tipo_fsa: tipo de formulário ("SOLICITACAO", "FSA MICRO <=10", "FSA MICRO >10").
+
+    Returns:
+        Lista de nomes de abas.
+    """
+    if tipo_fsa not in ABAS_PDF:
+        raise ValueError(f"tipo_fsa inválido: '{tipo_fsa}'. Válidos: {list(ABAS_PDF.keys())}")
+
+    abas = list(ABAS_PDF[tipo_fsa])
+    if _tem_gd_existente(caminho_preenchido):
+        # Página da geração existente entra após FORMULARIO (mesma ordem das
+        # abas no template: FORMULARIO → GD EXISTENTE → MD-SOLAR)
+        pos = abas.index("FORMULARIO") + 1 if "FORMULARIO" in abas else len(abas)
+        abas.insert(pos, "GD EXISTENTE")
+        print(f"  [step4] Geração existente detectada — incluindo GD EXISTENTE na saída.")
+    if _tem_ucs_beneficiarias(caminho_preenchido):
+        abas.append("UC BENEFICIARIAS")
+        print(f"  [step4] UCs beneficiárias detectadas — incluindo na saída.")
+    return abas
+
+
+def _normalizar_texto(texto: str) -> str:
+    """Maiúsculas, sem acentos e com espaços colapsados — o texto extraído do
+    PDF quebra linhas em pontos imprevisíveis, então normaliza antes de casar."""
+    decomposto = unicodedata.normalize("NFD", str(texto))
+    sem_acento = "".join(c for c in decomposto if unicodedata.category(c) != "Mn")
+    return " ".join(sem_acento.upper().split())
+
+
+def gerar_pdf_relacao_carga(
+    caminho_pdf: str,
+    pasta_saida: str,
+    nome_titular: str,
+    codigo_uc: str,
+    abas: list = None,
+) -> str:
+    """
+    Salva a(s) página(s) da aba RELACAO DE CARGA do memorial como PDF avulso.
+
+    A página continua no PDF do memorial — este arquivo é uma cópia extra, para
+    quando a concessionária pede a relação de carga separada. O PDF de origem
+    NÃO é modificado.
+
+    Args:
+        caminho_pdf: PDF do memorial já gerado (saída de gerar_pdf).
+        pasta_saida: pasta de destino do PDF avulso.
+        nome_titular: para nomear o arquivo.
+        codigo_uc: para nomear o arquivo.
+        abas: lista de abas do PDF, usada só como fallback de localização.
+
+    Returns:
+        Caminho absoluto do PDF avulso, ou None se a página não for localizada.
+    """
+    from pypdf import PdfReader, PdfWriter
+
+    reader = PdfReader(caminho_pdf)
+    total = len(reader.pages)
+
+    # Localiza pelo título da aba (D3 do template), que não aparece em nenhuma
+    # outra aba exportada. Compara sem espaços porque a extração de texto do PDF
+    # pode espalhar espaços dentro do título.
+    marca = MARCA_RELACAO_CARGA.replace(" ", "")
+    paginas = []
+    for i in range(total):
+        try:
+            texto = _normalizar_texto(reader.pages[i].extract_text() or "")
+        except Exception:
+            texto = ""
+        if marca in texto.replace(" ", ""):
+            paginas.append(i)
+
+    # Fallback: sem texto extraível, usa a posição da aba — só vale quando a
+    # contagem de páginas bate com a de abas (1 página por aba).
+    if not paginas and abas and len(abas) == total and ABA_RELACAO_CARGA in abas:
+        paginas = [abas.index(ABA_RELACAO_CARGA)]
+        print(f"  [step4] Relação de carga localizada por posição (página {paginas[0] + 1}).")
+
+    if not paginas:
+        print(f"  [step4] AVISO: página da relação de carga não localizada — PDF avulso não gerado.")
+        return None
+
+    writer = PdfWriter()
+    for i in paginas:
+        writer.add_page(reader.pages[i])
+
+    nome_avulso = (
+        f"{sanitize_filename_part(nome_titular.upper())}"
+        f"_UC_{sanitize_filename_part(codigo_uc)}_RELACAO_DE_CARGA.pdf"
+    )
+    Path(pasta_saida).mkdir(parents=True, exist_ok=True)
+    caminho_avulso = os.path.join(pasta_saida, nome_avulso)
+    with open(caminho_avulso, "wb") as f_out:
+        writer.write(f_out)
+
+    print(f"  [step4] OK — Relação de carga avulsa: {nome_avulso} ({len(paginas)} pág.)")
+    return caminho_avulso
+
+
 def gerar_pdf(
     caminho_preenchido: str,
     pasta_saida: str,
     nome_titular: str,
     codigo_uc: str,
     tipo_fsa: str = "SOLICITACAO",
+    abas: list = None,
 ) -> str:
     """
     Gera o PDF de saída usando LibreOffice diretamente.
@@ -169,6 +281,7 @@ def gerar_pdf(
         nome_titular: para nomear o arquivo.
         codigo_uc: para nomear o arquivo.
         tipo_fsa: tipo de formulário ("SOLICITACAO", "FSA MICRO <=10", "FSA MICRO >10").
+        abas: lista de abas já montada (ver montar_abas). Se None, monta aqui.
 
     Returns:
         Caminho absoluto do PDF gerado.
@@ -177,17 +290,7 @@ def gerar_pdf(
         raise ValueError(f"tipo_fsa inválido: '{tipo_fsa}'. Válidos: {list(ABAS_PDF.keys())}")
 
     # Montar lista de abas para o PDF
-    abas = list(ABAS_PDF[tipo_fsa])
-    if _tem_gd_existente(caminho_preenchido):
-        # Página da geração existente entra após FORMULARIO (mesma ordem das
-        # abas no template: FORMULARIO → GD EXISTENTE → MD-SOLAR)
-        pos = abas.index("FORMULARIO") + 1 if "FORMULARIO" in abas else len(abas)
-        abas.insert(pos, "GD EXISTENTE")
-        print(f"  [step4] Geração existente detectada — incluindo GD EXISTENTE na saída.")
-    if _tem_ucs_beneficiarias(caminho_preenchido):
-        abas.append("UC BENEFICIARIAS")
-        print(f"  [step4] UCs beneficiárias detectadas — incluindo na saída.")
-
+    abas = list(abas) if abas else montar_abas(caminho_preenchido, tipo_fsa)
     print(f"  [step4] Abas para o PDF: {abas}")
 
     # Copiar arquivo para pasta temporária (LibreOffice pode modificar o original)

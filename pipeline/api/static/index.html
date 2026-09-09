@@ -547,6 +547,10 @@
             background: var(--amber);
             color: #0c0f14;
         }
+        .dl-carga {
+            background: var(--blue);
+            color: white;
+        }
 
         .btn-nova {
             margin-top: 0.8rem;
@@ -641,6 +645,8 @@
     </div>
     <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
         <button class="btn-demo" onclick="window.location.href='/ferramentas'" title="Ferramentas de Dimensionamento">&#9874; Ferramentas</button>
+        <button class="btn-demo" onclick="window.location.href='/medicao-agrupada'" title="Memorial de Medição Agrupada">&#9889; Medição Agrupada</button>
+        <button class="btn-demo" onclick="window.location.href='/localizacao'" title="Localização do Projeto (mapa, UTM e bússola)">&#128205; Localização</button>
         <button class="btn-demo" onclick="preencherDados()">&#9881; Dados de Exemplo</button>
         <button class="btn-salvar" onclick="abrirModalSalvar()">&#128190; Salvar Projeto</button>
         <button class="btn-carregar" onclick="abrirModalProjetos()">&#128193; Carregar Projeto</button>
@@ -1683,6 +1689,7 @@ async function gerarDocumentos() {
                 <div class="download-links">
                     ${mkLink(data.xlsx_url, data.xlsx_nome, 'dl-xlsx', '📊')}
                     ${mkLink(data.pdf_url, data.pdf_nome, 'dl-pdf', '📄')}
+                    ${mkLink(data.relacao_carga_url, data.relacao_carga_nome, 'dl-carga', '🔌')}
                     ${mkLink(data.procuracao_url, data.procuracao_nome, 'dl-proc', '📜')}
                     ${mkLink(data.txt_url, data.txt_nome, 'dl-proc', '📝')}
                 </div>

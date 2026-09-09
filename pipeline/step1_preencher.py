@@ -45,6 +45,7 @@ def preencher_template(dados: DadosProjeto, pasta_saida: str = None) -> str:
     _preencher_fsa(wb, dados)
     _preencher_formulario(wb, dados)
     _preencher_gd_existente(wb, dados)
+    _preencher_ucs_beneficiarias(wb, dados)
 
     wb.save(str(destino))
     wb.close()
@@ -344,3 +345,31 @@ def _preencher_gd_existente(wb, dados: DadosProjeto):
         _safe_write(ws, f"G{row}", inv.modelo)                   # G (merge G:I)
         ws.cell(row=row, column=10).value = inv.potencia_kw      # J
         ws.cell(row=row, column=12).value = inv.tensao_nominal_v # L
+
+
+def _preencher_ucs_beneficiarias(wb, dados: DadosProjeto):
+    """Preenche a aba UC BENEFICIARIAS (ate 10 UCs, linhas 15-24).
+
+    Layout do template:
+        B = Codigo do cliente (UC) | C = titular (merge C:E)
+        F = CPF/CNPJ (merge F:G)   | H = endereco (merge H:J)
+        K = percentil (%)
+
+    K25 e N4 (=SUM(K15:K24)) sao formulas do template — nao tocar.
+    A aba SAIDA espelha B15:B24/K15:K24 em CY2:DR2 e o step4_gerar_pdf
+    detecta B15 preenchida para acrescentar a pagina ao PDF.
+    """
+    if "UC BENEFICIARIAS" not in wb.sheetnames:
+        return
+    if not dados.ucs_beneficiarias:
+        return
+
+    ws = wb["UC BENEFICIARIAS"]
+
+    for i, uc in enumerate(dados.ucs_beneficiarias[:10]):
+        row = 15 + i
+        ws.cell(row=row, column=2).value = uc.codigo_uc      # B
+        _safe_write(ws, f"C{row}", uc.titular)               # C (merge C:E)
+        _safe_write(ws, f"F{row}", uc.cpf_cnpj)              # F (merge F:G)
+        _safe_write(ws, f"H{row}", uc.endereco)              # H (merge H:J)
+        ws.cell(row=row, column=11).value = uc.percentual    # K

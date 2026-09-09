@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Localizacao do Projeto</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0c0f14;
+            --bg-card: #151921;
+            --bg-input: #1c2230;
+            --border: #2a3040;
+            --text: #e8eaed;
+            --text-muted: #7c8496;
+            --text-dim: #505868;
+            --amber: #f59e0b;
+            --green: #22c55e;
+            --red: #ef4444;
+            --radius: 10px;
+            --radius-lg: 16px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+                radial-gradient(ellipse 600px 400px at 20% 10%, rgba(245,158,11,0.04), transparent),
+                radial-gradient(ellipse 500px 350px at 80% 80%, rgba(59,130,246,0.03), transparent);
+            pointer-events: none; z-index: 0;
+        }
+        header {
+            background: rgba(21,25,33,0.75);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(245,158,11,0.1);
+            padding: 0.9rem 2rem;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 0.85rem; }
+        .header-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--amber), #d97706);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+        }
+        h1 { font-family: 'Outfit', sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+        .subtitle { font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.04em; text-transform: uppercase; }
+        .btn-demo {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.2);
+            color: var(--amber);
+            padding: 0.4rem 0.9rem; border-radius: 6px; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 500;
+            transition: all 0.2s; letter-spacing: 0.02em;
+        }
+        .btn-demo:hover { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.4); }
+
+        .container { max-width: 1040px; margin: 0 auto; padding: 1.5rem 1rem 3rem; position: relative; z-index: 1; }
+        .section {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.4rem; margin-bottom: 1.2rem;
+        }
+        .section-title {
+            font-family: 'Outfit', sans-serif; font-size: 1rem; font-weight: 600;
+            display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem;
+        }
+        .section-badge {
+            width: 22px; height: 22px; border-radius: 6px;
+            background: rgba(245,158,11,0.14); color: var(--amber);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: 700;
+        }
+        .hint { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.9rem; }
+
+        /* Visor: mesma proporcao 1:1 da imagem gerada */
+        .visor-wrap { position: relative; width: 100%; max-width: 620px; margin: 0 auto; }
+        .visor-wrap::before { content: ''; display: block; padding-top: 100%; }
+        #mapa {
+            position: absolute; inset: 0;
+            border-radius: var(--radius); overflow: hidden;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+        }
+        #mapa-erro {
+            position: absolute; inset: 0; display: none;
+            align-items: center; justify-content: center; text-align: center;
+            padding: 2rem; color: var(--text-muted); font-size: 0.85rem;
+        }
+        .tipos { display: flex; gap: 0.4rem; justify-content: center; margin: 0.9rem 0 0.2rem; flex-wrap: wrap; }
+        .tipo-btn {
+            background: var(--bg-input); border: 1px solid var(--border); color: var(--text-muted);
+            padding: 0.35rem 0.85rem; border-radius: 6px; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; font-size: 0.78rem; transition: all 0.15s;
+        }
+        .tipo-btn:hover { border-color: rgba(245,158,11,0.35); color: var(--text); }
+        .tipo-btn.ativo { background: rgba(245,158,11,0.14); border-color: var(--amber); color: var(--amber); font-weight: 600; }
+
+        .coord-box {
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 0.9rem 1rem;
+            display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+            flex-wrap: wrap; margin-top: 1rem;
+        }
+        .coord-texto {
+            font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+            font-size: 0.92rem; color: var(--text); user-select: all; letter-spacing: 0.01em;
+        }
+        .coord-sub { font-size: 0.72rem; color: var(--text-dim); margin-top: 0.15rem; user-select: all; }
+
+        .acoes { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
+        .btn {
+            flex: 1; min-width: 180px; padding: 0.75rem 1rem; border-radius: var(--radius);
+            border: 1px solid var(--border); background: var(--bg-input); color: var(--text);
+            font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .btn:hover:not(:disabled) { border-color: rgba(245,158,11,0.4); }
+        .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .btn-primario {
+            background: linear-gradient(135deg, var(--amber), #d97706);
+            border-color: transparent; color: #1a1206;
+        }
+        .btn-primario:hover:not(:disabled) { box-shadow: 0 0 20px rgba(245,158,11,0.3); transform: translateY(-1px); }
+
+        .status { margin-top: 0.9rem; font-size: 0.83rem; min-height: 1.4rem; }
+        .status.ok { color: var(--green); }
+        .status.erro { color: var(--red); }
+        .status.info { color: var(--text-muted); }
+
+        .ir-linha { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+        .ir-linha input {
+            flex: 1; min-width: 220px; padding: 0.6rem 0.8rem;
+            background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text);
+            font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem;
+        }
+        .ir-linha input:focus { outline: none; border-color: var(--amber); }
+        .ir-linha button {
+            padding: 0.6rem 1.1rem; border-radius: 8px; cursor: pointer;
+            background: var(--bg-input); border: 1px solid var(--border); color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+        }
+        .ir-linha button:hover { color: var(--text); border-color: rgba(245,158,11,0.35); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <div class="header-icon">&#128205;</div>
+        <div>
+            <h1>Localizacao do Projeto</h1>
+            <div class="subtitle">Imagem de satelite com UTM e bussola</div>
+        </div>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <button class="btn-demo" onclick="window.location.href='/ferramentas'">&#9874; Ferramentas</button>
+        <button class="btn-demo" onclick="window.location.href='/'">&#8592; Voltar ao Memorial</button>
+    </div>
+</header>
+
+<main class="container">
+
+    <div class="section">
+        <div class="section-title"><span class="section-badge">1</span> Enquadrar o local</div>
+        <div class="hint">
+            Clique no mapa para cravar o alfinete no ponto do projeto. Ele fica onde
+            voce colocou &mdash; depois da para arrastar o mapa e usar o zoom para pegar
+            contexto sem perder o ponto. O alfinete pode ser arrastado para ajuste fino.
+            O visor tem a mesma proporcao da imagem gerada, entao o que voce enquadra e o que sai.
+        </div>
+
+        <div class="visor-wrap">
+            <div id="mapa"></div>
+            <div id="mapa-erro"></div>
+        </div>
+
+        <div class="tipos">
+            <button class="tipo-btn ativo" data-tipo="hybrid">Hibrido</button>
+            <button class="tipo-btn" data-tipo="satellite">Satelite</button>
+            <button class="tipo-btn" data-tipo="roadmap">Mapa</button>
+            <button class="tipo-btn" data-tipo="terrain">Terreno</button>
+        </div>
+
+        <div class="ir-linha">
+            <input type="text" id="ir-coord" placeholder="Colar coordenada: -11.8600, -55.5000">
+            <button onclick="irParaCoordenada()">Ir</button>
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title"><span class="section-badge">2</span> Coordenada</div>
+        <div class="coord-box">
+            <div>
+                <div class="coord-texto" id="utm-texto">&mdash;</div>
+                <div class="coord-sub" id="latlon-texto">&mdash;</div>
+            </div>
+            <button class="btn-demo" onclick="copiarCoordenada()">Copiar coordenada</button>
+        </div>
+
+        <div class="acoes">
+            <button class="btn btn-primario" id="btn-copiar" onclick="copiarImagem()" disabled>
+                &#128203; Copiar imagem
+            </button>
+            <button class="btn" id="btn-baixar" onclick="baixarImagem()" disabled>
+                &#11015; Baixar PNG
+            </button>
+        </div>
+
+        <div class="status info" id="status">Carregando mapa&hellip;</div>
+    </div>
+
+</main>
+
+<script>
+var TOKEN = localStorage.getItem('memorial_token') || '';
+var mapa = null;
+var tipoAtual = 'hybrid';
+var ultimaUTM = null;
+var pino = null;
+var debounce = null;
+
+// Centro inicial: Sinop-MT, regiao de atuacao do escritorio
+var CENTRO_PADRAO = { lat: -11.8604, lng: -55.5094 };
+var ZOOM_PADRAO = 18;
+// A Static API nao aceita zoom acima de 21; travar aqui mantem o
+// visor fiel a imagem que vai ser gerada.
+var ZOOM_MAX = 21;
+
+function auth() { return { 'Authorization': 'Bearer ' + TOKEN }; }
+
+function setStatus(msg, classe) {
+    var el = document.getElementById('status');
+    el.textContent = msg;
+    el.className = 'status ' + (classe || 'info');
+}
+
+function mostrarErroMapa(msg) {
+    var box = document.getElementById('mapa-erro');
+    box.style.display = 'flex';
+    box.innerHTML = msg;
+    document.getElementById('btn-copiar').disabled = true;
+    document.getElementById('btn-baixar').disabled = true;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    if (!TOKEN) { window.location.replace('/login'); return; }
+
+    fetch('/api/mapa/config', { headers: auth() })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+            if (!res.ok) {
+                setStatus(res.d.error || 'Falha ao obter configuracao do mapa.', 'erro');
+                mostrarErroMapa(
+                    '<div><strong>Mapa indisponivel</strong><br><br>' +
+                    (res.d.error || '') +
+                    '<br><br>Configure a chave em Settings &rarr; Variables and secrets do Space.</div>'
+                );
+                return;
+            }
+            carregarGoogleMaps(res.d.browser_key);
+        })
+        .catch(function () {
+            setStatus('Erro de rede ao carregar o mapa.', 'erro');
+        });
+});
+
+function carregarGoogleMaps(chave) {
+    var s = document.createElement('script');
+    s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(chave) + '&callback=iniciarMapa';
+    s.async = true;
+    s.onerror = function () {
+        setStatus('Nao foi possivel carregar o Google Maps.', 'erro');
+        mostrarErroMapa('<div><strong>Falha ao carregar o Google Maps</strong><br><br>Verifique a chave e as restricoes de referrer no Google Cloud.</div>');
+    };
+    document.head.appendChild(s);
+}
+
+function iniciarMapa() {
+    mapa = new google.maps.Map(document.getElementById('mapa'), {
+        center: CENTRO_PADRAO,
+        zoom: ZOOM_PADRAO,
+        maxZoom: ZOOM_MAX,
+        mapTypeId: tipoAtual,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        tilt: 0
+    });
+
+    // Clique crava o alfinete; ele fica onde foi posto, mesmo que o
+    // usuario depois arraste o mapa ou mude o zoom.
+    mapa.addListener('click', function (e) { cravarPino(e.latLng); });
+
+    mapa.addListener('idle', avaliarEnquadramento);
+
+    document.querySelectorAll('.tipo-btn').forEach(function (b) {
+        b.addEventListener('click', function () {
+            document.querySelectorAll('.tipo-btn').forEach(function (x) { x.classList.remove('ativo'); });
+            b.classList.add('ativo');
+            tipoAtual = b.dataset.tipo;
+            mapa.setMapTypeId(tipoAtual);
+        });
+    });
+
+    setStatus('Clique no mapa para cravar o ponto do projeto.', 'info');
+    atualizarBotoes();
+}
+
+function cravarPino(latLng) {
+    if (!pino) {
+        pino = new google.maps.Marker({
+            map: mapa,
+            position: latLng,
+            draggable: true,
+            title: 'Ponto do projeto — arraste para ajuste fino'
+        });
+        pino.addListener('dragend', function () {
+            atualizarCoordenada();
+            avaliarEnquadramento();
+        });
+    } else {
+        pino.setPosition(latLng);
+    }
+    atualizarCoordenada();
+    avaliarEnquadramento();
+    atualizarBotoes();
+}
+
+function atualizarBotoes() {
+    var tem = !!pino;
+    document.getElementById('btn-copiar').disabled = !tem;
+    document.getElementById('btn-baixar').disabled = !tem;
+}
+
+// O alfinete pode sair do quadro depois de um zoom ou arrasto. Nesse caso
+// o servidor nao desenha marcador nenhum, entao vale avisar antes.
+function avaliarEnquadramento() {
+    if (!pino) return;
+    var b = mapa.getBounds();
+    if (b && !b.contains(pino.getPosition())) {
+        setStatus('O alfinete esta fora do quadro — reenquadre para inclui-lo.', 'erro');
+    } else {
+        setStatus('Ponto cravado. Enquadre e clique em Copiar imagem.', 'ok');
+    }
+}
+
+function centroAtual() {
+    var c = mapa.getCenter();
+    return { lat: c.lat(), lon: c.lng() };
+}
+
+function pontoAtual() {
+    if (!pino) return null;
+    var p = pino.getPosition();
+    return { lat: p.lat(), lon: p.lng() };
+}
+
+function atualizarCoordenada() {
+    clearTimeout(debounce);
+    debounce = setTimeout(function () {
+        var p = pontoAtual();
+        if (!p) return;
+        document.getElementById('latlon-texto').textContent =
+            p.lat.toFixed(6) + ', ' + p.lon.toFixed(6);
+
+        // A conversao UTM vive no servidor (pipeline/utm.py), fonte unica.
+        fetch('/api/mapa/utm?lat=' + p.lat + '&lon=' + p.lon, { headers: auth() })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (u) {
+                if (!u) return;
+                ultimaUTM = u;
+                document.getElementById('utm-texto').textContent = u.texto;
+            })
+            .catch(function () { /* readout e informativo; falha nao bloqueia */ });
+    }, 250);
+}
+
+function copiarCoordenada() {
+    if (!ultimaUTM) { setStatus('Coordenada ainda nao calculada.', 'erro'); return; }
+    navigator.clipboard.writeText(ultimaUTM.texto).then(
+        function () { setStatus('Coordenada copiada.', 'ok'); },
+        function () { setStatus('Nao foi possivel copiar a coordenada.', 'erro'); }
+    );
+}
+
+function irParaCoordenada() {
+    var bruto = document.getElementById('ir-coord').value.trim();
+    var m = bruto.replace(/;/g, ',').split(',');
+    if (m.length !== 2) { setStatus('Formato esperado: latitude, longitude', 'erro'); return; }
+    var lat = parseFloat(m[0].trim());
+    var lon = parseFloat(m[1].trim());
+    if (isNaN(lat) || isNaN(lon)) { setStatus('Coordenada invalida.', 'erro'); return; }
+    var alvo = new google.maps.LatLng(lat, lon);
+    mapa.panTo(alvo);
+    mapa.setZoom(Math.min(19, ZOOM_MAX));
+    cravarPino(alvo);
+}
+
+function pedirImagem() {
+    var p = pontoAtual();
+    var c = centroAtual();
+    if (!p) return Promise.reject(new Error('Crave o alfinete no mapa primeiro.'));
+    return fetch('/api/mapa/capturar', {
+        method: 'POST',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, auth()),
+        body: JSON.stringify({
+            lat: p.lat, lon: p.lon,
+            lat_centro: c.lat, lon_centro: c.lon,
+            zoom: mapa.getZoom(),
+            tipo: tipoAtual
+        })
+    }).then(function (r) {
+        if (!r.ok) {
+            return r.json().then(function (d) { throw new Error(d.error || 'Falha ao gerar a imagem.'); });
+        }
+        return r.blob();
+    });
+}
+
+function copiarImagem() {
+    var btn = document.getElementById('btn-copiar');
+    btn.disabled = true;
+    setStatus('Gerando imagem...', 'info');
+
+    if (!window.ClipboardItem) {
+        btn.disabled = false;
+        setStatus('Este navegador nao permite copiar imagem. Use Baixar PNG.', 'erro');
+        return;
+    }
+
+    // Promise dentro do ClipboardItem: preserva o gesto do usuario
+    // mesmo com a requisicao demorando.
+    var item = new ClipboardItem({ 'image/png': pedirImagem() });
+
+    navigator.clipboard.write([item]).then(
+        function () {
+            btn.disabled = false;
+            setStatus('Imagem copiada. Cole na prancha com Ctrl+V.', 'ok');
+        },
+        function (e) {
+            btn.disabled = false;
+            setStatus((e && e.message) ? e.message : 'Nao foi possivel copiar a imagem.', 'erro');
+        }
+    );
+}
+
+function baixarImagem() {
+    var btn = document.getElementById('btn-baixar');
+    btn.disabled = true;
+    setStatus('Gerando imagem...', 'info');
+
+    pedirImagem().then(function (blob) {
+        var u = ultimaUTM;
+        var nome = u ? ('LOCALIZACAO_' + Math.round(u.easting) + '_' + Math.round(u.northing) + '_' + u.fuso + '.png')
+                     : 'LOCALIZACAO.png';
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = nome;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        btn.disabled = false;
+        setStatus('PNG baixado: ' + nome, 'ok');
+    }).catch(function (e) {
+        btn.disabled = false;
+        setStatus(e.message || 'Falha ao baixar a imagem.', 'erro');
+    });
+}
+</script>
+</body>
+</html>

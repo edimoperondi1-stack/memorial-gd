@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memorial de Medição Agrupada</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #0c0f14;
+            --bg-card: #151921;
+            --bg-card-hover: #1a1f2b;
+            --bg-input: #1c2230;
+            --border: #2a3040;
+            --text: #e8eaed;
+            --text-muted: #7c8496;
+            --text-dim: #505868;
+            --amber: #f59e0b;
+            --amber-soft: rgba(245,158,11,0.12);
+            --green: #22c55e;
+            --green-soft: rgba(34,197,94,0.12);
+            --red: #ef4444;
+            --red-soft: rgba(239,68,68,0.12);
+            --blue: #3b82f6;
+            --blue-soft: rgba(59,130,246,0.1);
+            --radius: 10px;
+            --radius-lg: 16px;
+
+            /* Aliases usados pelos componentes desta página */
+            --surface: var(--bg-card);
+            --surface-2: var(--bg-card-hover);
+            --surface-3: #232a38;
+            --ink: var(--text);
+            --ink-2: var(--text-muted);
+            --ink-3: var(--text-dim);
+            --line: var(--border);
+            --line-2: #333b4c;
+            --primary: var(--blue);
+            --primary-soft: var(--blue-soft);
+            --accent: var(--amber);
+            --accent-soft: var(--amber-soft);
+            --ok: var(--green);
+            --ok-soft: var(--green-soft);
+            --warn: var(--amber);
+            --warn-soft: var(--amber-soft);
+            --bad: var(--red);
+            --bad-soft: var(--red-soft);
+            --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-deep);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                radial-gradient(ellipse 600px 400px at 20% 10%, rgba(245,158,11,0.04), transparent),
+                radial-gradient(ellipse 500px 350px at 80% 80%, rgba(59,130,246,0.03), transparent);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ── Header ───────────────────────────────────────────── */
+        header {
+            background: rgba(21,25,33,0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(245,158,11,0.1);
+            padding: 0.9rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-left { display: flex; align-items: center; gap: 0.85rem; }
+        .header-icon {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--amber), #d97706);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            box-shadow: 0 0 20px rgba(245,158,11,0.2);
+        }
+        header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem; font-weight: 600;
+            letter-spacing: -0.02em; color: var(--text);
+        }
+        header .subtitle {
+            font-size: 0.75rem; color: var(--text-muted);
+            font-weight: 400; letter-spacing: 0.04em; text-transform: uppercase;
+        }
+        .btn-demo {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.2);
+            color: var(--amber);
+            padding: 0.4rem 0.9rem; border-radius: 6px; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; font-size: 0.78rem;
+            font-weight: 500; transition: all 0.2s; letter-spacing: 0.02em;
+        }
+        .btn-demo:hover {
+            background: rgba(245,158,11,0.15);
+            border-color: rgba(245,158,11,0.4);
+            box-shadow: 0 0 12px rgba(245,158,11,0.1);
+        }
+
+        /* ── Container e seções ───────────────────────────────── */
+        .container {
+            max-width: 1180px; margin: 0 auto;
+            padding: 1.5rem 1rem 5rem;
+            position: relative; z-index: 1;
+        }
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem; margin-bottom: 1rem;
+            transition: border-color 0.3s;
+            animation: fadeInUp 0.5s ease-out both;
+        }
+        .section:hover { border-color: rgba(245,158,11,0.15); }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem; font-weight: 600; color: var(--text);
+            display: flex; align-items: center; gap: 0.6rem;
+            margin-bottom: 1.1rem; letter-spacing: -0.01em;
+        }
+        .section-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 24px; height: 24px;
+            background: var(--amber-soft); color: var(--amber);
+            font-size: 0.7rem; font-weight: 700; border-radius: 6px; flex-shrink: 0;
+        }
+        .section-hint {
+            font-size: 0.73rem; font-weight: 400; color: var(--text-muted); margin-left: auto;
+        }
+
+        /* ── Campos ───────────────────────────────────────────── */
+        .grid { display: grid; gap: 0.75rem; }
+        .g2 { grid-template-columns: repeat(2, minmax(0,1fr)); }
+        .g3 { grid-template-columns: repeat(3, minmax(0,1fr)); }
+        .g4 { grid-template-columns: repeat(4, minmax(0,1fr)); }
+        .span2 { grid-column: span 2; }
+        @media (max-width: 620px) { .g2, .g3, .g4 { grid-template-columns: 1fr; } .span2 { grid-column: span 1; } }
+
+        label { display: flex; flex-direction: column; min-width: 0; }
+        label > span {
+            font-size: 0.7rem; font-weight: 600; color: var(--text-muted);
+            margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        input, select, textarea {
+            padding: 0.55rem 0.7rem;
+            border: 1px solid var(--border); border-radius: 6px;
+            font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+            color: var(--text); background: var(--bg-input);
+            transition: all 0.2s; width: 100%; min-width: 0;
+        }
+        input::placeholder { color: var(--text-dim); }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: var(--amber);
+            box-shadow: 0 0 0 3px var(--amber-soft), 0 0 12px rgba(245,158,11,0.08);
+        }
+        input[type=number] { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+        select {
+            cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237c8496' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 0.7rem center; padding-right: 2rem;
+        }
+        select option { background: var(--bg-card); color: var(--text); }
+
+        /* ── Blocos de UC ─────────────────────────────────────── */
+        .uc { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 0.9rem; background: var(--bg-deep); }
+        .uc > .uchead {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--border);
+            background: var(--bg-card-hover); border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .uc > .uchead .tag {
+            font-family: var(--mono); font-size: 0.7rem; font-weight: 600;
+            background: var(--amber); color: #000; padding: 0.1rem 0.45rem; border-radius: 4px;
+        }
+        .uc > .uchead .name {
+            font-weight: 600; font-size: 0.88rem; flex: 1; min-width: 0;
+            background: transparent; border: none; padding: 0.15rem 0;
+        }
+        .uc > .uchead .name:focus { box-shadow: none; border-bottom: 1px solid var(--amber); }
+        .uc > .ucbody { padding: 0.8rem; }
+
+        .subhead {
+            font-family: 'Outfit', sans-serif; font-size: 0.72rem; font-weight: 500;
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;
+            margin: 1rem 0 0.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid var(--border);
+        }
+
+        .btn {
+            border: 1px solid var(--border); background: var(--bg-input);
+            border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.78rem;
+            cursor: pointer; color: var(--text-muted);
+            font-family: 'DM Sans', sans-serif; white-space: nowrap; transition: all 0.2s;
+        }
+        .btn:hover { border-color: var(--amber); color: var(--amber); }
+        .btn.primary {
+            background: linear-gradient(135deg, var(--amber), #d97706);
+            border-color: transparent; color: #000; font-weight: 600;
+        }
+        .btn.primary:hover { box-shadow: 0 0 16px rgba(245,158,11,0.3); color: #000; }
+        .btn.tiny { padding: 0.22rem 0.55rem; font-size: 0.72rem; }
+        .btn.danger:hover { border-color: var(--red); color: var(--red); }
+        .rowbtns { display: flex; gap: 0.45rem; flex-wrap: wrap; margin-top: 0.7rem; }
+
+        .hint { font-size: 0.73rem; color: var(--text-muted); line-height: 1.45; }
+
+        .autobar {
+            display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap;
+            padding: 0.65rem 0.75rem; margin-bottom: 0.8rem;
+            background: var(--amber-soft);
+            border: 1px solid rgba(245,158,11,0.22); border-radius: var(--radius);
+        }
+        .autobar label { max-width: 190px; }
+        .autobar .hint { flex: 1; min-width: 140px; padding-bottom: 0.35rem; }
+        .autobar.total { background: var(--blue-soft); border-color: rgba(59,130,246,0.25); }
+
+        .aclist { display: flex; flex-direction: column; gap: 0.4rem; }
+        .acrow { display: grid; grid-template-columns: minmax(0,1fr) 62px 76px 26px; gap: 0.4rem; align-items: center; }
+        .acrow select { font-size: 0.78rem; padding: 0.4rem 1.6rem 0.4rem 0.5rem; }
+        .acrow input { padding: 0.4rem 0.5rem; }
+        .acrow .w { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); text-align: right; font-variant-numeric: tabular-nums; }
+
+        /* ── Veredito ─────────────────────────────────────────── */
+        .verdict {
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 1rem; display: flex; flex-direction: column; gap: 0.6rem;
+        }
+        .verdict.ok  { background: var(--green-soft); border-color: rgba(34,197,94,0.35); }
+        .verdict.bad { background: var(--amber-soft); border-color: rgba(245,158,11,0.35); }
+        .verdict .top { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+        .verdict .big {
+            font-family: var(--mono); font-size: 1.9rem; font-weight: 600;
+            letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1;
+        }
+        .verdict.ok .big  { color: var(--green); }
+        .verdict.bad .big { color: var(--amber); }
+        .verdict .unit { font-family: var(--mono); font-size: 0.78rem; color: var(--text-muted); }
+        .verdict .msg { font-size: 0.85rem; line-height: 1.5; color: var(--text); }
+        .meter { height: 7px; background: var(--surface-3); border-radius: 4px; overflow: hidden; position: relative; }
+        .meter i { display: block; height: 100%; background: var(--green); transition: width .25s ease; }
+        .verdict.bad .meter i { background: var(--amber); }
+        .meter .mark { position: absolute; top: -3px; bottom: -3px; width: 1.5px; background: var(--text-muted); }
+        .meterlab { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 0.66rem; color: var(--text-dim); }
+
+        /* ── Tabelas ──────────────────────────────────────────── */
+        .tablewrap { overflow-x: auto; }
+        table.data { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        table.data th, table.data td {
+            padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--border);
+            text-align: left; white-space: nowrap;
+        }
+        table.data th {
+            font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em;
+            color: var(--text-muted); font-weight: 600; background: var(--bg-card-hover);
+        }
+        table.data td.n { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+        table.data tr:last-child td { border-bottom: none; }
+        table.data tr.total td { font-weight: 600; background: var(--bg-card-hover); }
+
+        .chip {
+            font-family: var(--mono); font-size: 0.7rem; font-weight: 600;
+            padding: 0.08rem 0.4rem; border-radius: 4px;
+            background: var(--blue-soft); color: var(--blue);
+            border: 1px solid rgba(59,130,246,0.3);
+        }
+        .chip.acc { background: var(--amber-soft); color: var(--amber); border-color: rgba(245,158,11,0.3); }
+
+        dl.spec { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; margin: 0; font-size: 0.82rem; }
+        dl.spec dt { color: var(--text-muted); white-space: nowrap; }
+        dl.spec dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+
+        .alert {
+            border-left: 3px solid var(--amber); background: var(--amber-soft);
+            padding: 0.55rem 0.75rem; font-size: 0.8rem; line-height: 1.45;
+            border-radius: 0 6px 6px 0; margin-bottom: 0.5rem;
+        }
+        .alert.bad  { border-left-color: var(--red);  background: var(--red-soft); }
+        .alert.info { border-left-color: var(--blue); background: var(--blue-soft); }
+
+        /* ── Documento ────────────────────────────────────────── */
+        #doc {
+            font-family: var(--mono); font-size: 0.74rem; line-height: 1.6;
+            padding: 1rem; white-space: pre-wrap; max-height: 560px; overflow-y: auto;
+            color: var(--text); background: var(--bg-deep);
+            border: 1px solid var(--border); border-radius: var(--radius);
+        }
+        .footnote {
+            font-size: 0.73rem; color: var(--text-muted); line-height: 1.5;
+            border-top: 1px solid var(--border); padding-top: 0.8rem; margin-top: 1rem;
+        }
+
+        /* ── Colunas ──────────────────────────────────────────── */
+        .cols { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1rem; align-items: start; }
+        @media (max-width: 1000px) { .cols { grid-template-columns: 1fr; } }
+
+        @media print {
+            header, .noprint, .col-form, .section-title, .footnote { display: none !important; }
+            .cols { display: block; }
+            body { background: #fff; color: #000; }
+            body::before { display: none; }
+            .section { border: none; background: #fff; padding: 0; margin: 0; }
+            #doc { max-height: none; overflow: visible; border: none; background: #fff; color: #000; font-size: 10pt; padding: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <div class="header-icon">&#9889;</div>
+        <div>
+            <h1>Memorial de Medi&ccedil;&atilde;o Agrupada</h1>
+            <div class="subtitle">NDU-001 v7.0 &middot; NDU-003 v8.1 &middot; 220/127 V</div>
+        </div>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+        <button class="btn-demo" onclick="window.location.href='/ferramentas'" title="Ferramentas de Dimensionamento">&#9874; Ferramentas</button>
+        <button class="btn-demo" onclick="window.location.href='/'" title="Voltar ao Memorial GD">&#8592; Voltar ao Memorial</button>
+    </div>
+</header>
+
+<main class="container">
+
+<div class="cols">
+  <!-- ══════════ ENTRADA ══════════ -->
+  <div class="col-form">
+
+    <div class="section">
+      <div class="section-title"><span class="section-badge">1</span> Respons&aacute;vel t&eacute;cnico
+        <span class="section-hint">salvo neste navegador</span></div>
+      <div class="grid g2">
+        <label class="span2"><span>Nome</span><input id="rt_nome" placeholder="Nome completo"></label>
+        <label><span>T&iacute;tulo</span><input id="rt_titulo" value="Engenheiro Eletricista"></label>
+        <label><span>CREA / RNP</span><input id="rt_crea" placeholder="CREA-MT 000000"></label>
+        <label><span>N&ordm; da ART</span><input id="rt_art" placeholder="MT00000000000"></label>
+        <label><span>Telefone</span><input id="rt_fone" placeholder="(66) 90000-0000"></label>
+        <label class="span2"><span>E-mail</span><input id="rt_email" placeholder="engenheiro@dominio.com.br"></label>
+        <label class="span2"><span>Endere&ccedil;o profissional</span><input id="rt_end" placeholder="Rua, n&ordm; &mdash; Bairro, Cidade-UF"></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="section-badge">2</span> Obra</div>
+      <div class="grid g2">
+        <label class="span2"><span>Propriet&aacute;rio</span><input id="ob_prop" placeholder="Nome do propriet&aacute;rio"></label>
+        <label><span>CPF / CNPJ</span><input id="ob_doc"></label>
+        <label><span>Munic&iacute;pio / UF</span><input id="ob_mun" value="Sinop - MT"></label>
+        <label class="span2"><span>Endere&ccedil;o da obra</span><input id="ob_end" placeholder="Rua, n&ordm;"></label>
+        <label><span>Bairro</span><input id="ob_bairro"></label>
+        <label><span>CEP</span><input id="ob_cep"></label>
+        <label><span>Transformador</span><input id="ob_trafo" placeholder="0000000000-00"></label>
+        <label><span>Dist&acirc;ncia entrega&rarr;medi&ccedil;&atilde;o</span><input id="ob_dist" value="6 metros"></label>
+        <label><span>Tipo de ramal de entrada</span>
+          <select id="ob_ramal">
+            <option value="embutido">A&eacute;reo / embutido</option>
+            <option value="subterraneo">Subterr&acirc;neo</option>
+          </select></label>
+        <label><span>Isola&ccedil;&atilde;o dos condutores</span>
+          <select id="ob_isol">
+            <option value="xlpe">XLPE / HEPR / EPR 90 &deg;C</option>
+            <option value="pvc">PVC 70 &deg;C</option>
+          </select></label>
+        <label><span>Poste auxiliar</span>
+          <select id="ob_poste">
+            <option value="concreto">Concreto duplo T</option>
+            <option value="aco">A&ccedil;o galvanizado a quente</option>
+          </select></label>
+        <label><span>Data do documento</span><input id="ob_data" type="date"></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="section-badge">3</span> Unidades consumidoras
+        <span class="section-hint"><button class="btn tiny" id="addUC" type="button">+ unidade</button></span></div>
+
+      <div class="autobar total">
+        <label><span>&Sigma; demanda alvo do conjunto (kVA)</span>
+          <input type="number" step="0.01" min="0" id="alvoTotal" placeholder="ex.: 36,90"></label>
+        <button class="btn tiny primary" id="solveAll" type="button">&#9889; Distribuir e gerar</button>
+        <span class="hint">reparte o alvo entre as unidades na propor&ccedil;&atilde;o das demandas atuais</span>
+      </div>
+
+      <div id="ucs"></div>
+
+      <p class="hint" style="margin-top:0.7rem">Lance em <b>Ilumina&ccedil;&atilde;o e tomadas</b> apenas ilumina&ccedil;&atilde;o e TUGs. Chuveiro, ar-condicionado, fog&atilde;o el&eacute;trico e eletrodom&eacute;sticos de grande porte t&ecirc;m parcela pr&oacute;pria &mdash; lan&ccedil;&aacute;-los duas vezes infla a demanda e derruba o enquadramento.</p>
+    </div>
+
+  </div>
+
+  <!-- ══════════ SAÍDA ══════════ -->
+  <div class="col-out">
+
+    <div class="section">
+      <div class="section-title"><span class="section-badge">4</span> Resultado</div>
+      <div id="verdict"></div>
+      <div id="alerts" style="margin-top:0.8rem"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="section-badge">5</span> Demanda por unidade</div>
+      <div class="tablewrap"><table class="data" id="tabUC"></table></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="section-badge">6</span> Entrada de servi&ccedil;o
+        <span class="section-hint">NDU-003 Tab. 23</span></div>
+      <dl class="spec" id="specGeral"></dl>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="section-badge">7</span> Conjunto de medi&ccedil;&atilde;o</div>
+      <div id="caixas"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title"><span class="section-badge">8</span> Memorial descritivo
+        <span class="section-hint">
+          <button class="btn tiny" id="copyBtn" type="button">Copiar</button>
+          <button class="btn tiny primary" id="printBtn" type="button">Imprimir / PDF</button>
+        </span></div>
+      <div id="doc"></div>
+      <p class="footnote">Motor de c&aacute;lculo: NDU-001 v7.0 Tabelas 5 a 11 e 16, emiss&atilde;o de 01/11/2024 &middot; NDU-003 v8.1 (fev/2025) Tabelas 23 e 28, item 8.8.1 e Desenhos 52 a 54. Demanda residencial por faixas <b>acumulativas</b> (Nota III da Tabela 5). Ar-condicionado pela Tabela 9 da emiss&atilde;o de <b>01/11/2024</b>, que separa janela de split &mdash; a emiss&atilde;o de 01/07/2024, que circula com o mesmo n&uacute;mero de vers&atilde;o, traz pot&ecirc;ncias bem menores. Confira sempre a vers&atilde;o vigente no site de Normas T&eacute;cnicas da Energisa antes de protocolar.</p>
+    </div>
+
+  </div>
+</div>
+
+</main>
+
+<script>
+
+"use strict";
+
+/* ══════════════════════════════════════════════════════
+   TABELAS NORMATIVAS
+   ══════════════════════════════════════════════════════ */
+
+// NDU-001 Tab. 5 — fatores de demanda para iluminação e tomadas.
+// tipo 'cum'  → faixas acumulativas (Nota III)
+// tipo 'flat' → fator único
+// tipo 'band' → faixas acumulativas declaradas na própria tabela
+const T5 = {
+  residencia:{rot:"Residência", tipo:"cum", faixas:[[1,86],[2,75],[3,66],[4,59],[5,52],[6,45],[7,40],[8,35],[9,31],[10,27],[Infinity,24]]},
+  loja:      {rot:"Loja e Similares", tipo:"flat", f:86},
+  restaurante:{rot:"Restaurante e Similares", tipo:"flat", f:86},
+  igreja:    {rot:"Igreja e Similares", tipo:"flat", f:86},
+  areacomum: {rot:"Área comum / Garagem", tipo:"flat", f:86},
+  clube:     {rot:"Clube e Similares", tipo:"flat", f:86},
+  salao:     {rot:"Barbearia / Salão de Beleza", tipo:"flat", f:86},
+  banco:     {rot:"Banco e Similares", tipo:"flat", f:86},
+  canteiro:  {rot:"Canteiro de Obras", tipo:"flat", f:86},
+  auditorio: {rot:"Auditório / Salão de Exposição", tipo:"flat", f:86},
+  escritorio:{rot:"Escritório", tipo:"band", faixas:[[20,86],[Infinity,70]]},
+  escola:    {rot:"Escola e Similares", tipo:"band", faixas:[[12,86],[Infinity,50]]},
+  hospital:  {rot:"Hospital e Similares", tipo:"band", faixas:[[50,40],[Infinity,50]]},
+  hotel:     {rot:"Hotel e Similares", tipo:"band", faixas:[[20,50],[100,40],[Infinity,30]]},
+  quartel:   {rot:"Quartel e Similares", tipo:"band", faixas:[[15,100],[Infinity,40]]}
+};
+
+// NDU-001 Tab. 6 — aquecimento de água, por nº de aparelhos
+const T6=[100,75,70,66,62,59,56,53,51,49,47,45,43,41,40,39,38,37,36,35,34,33,32,31];
+const t6=n=>n<=0?0:(n<=24?T6[n-1]:30);
+
+// NDU-001 Tab. 7 — secadora / micro-ondas / lava-louça / hidromassagem
+const t7=n=>n<=0?0:n===1?100:n<=4?70:n<=6?60:n<=9?50:45;
+
+// NDU-001 Tab. 8 — fogões e fornos elétricos
+const T8=[100,60,48,40,37,35,33,32,31];
+const t8=n=>n<=0?0:n<=9?T8[n-1]:n<=11?30:n<=15?28:n<=20?27:n<=25?26:25;
+
+// NDU-001 Tab. 9 (emissão 01/11/2024) — potência de ar-condicionado por
+// capacidade E tipo. A emissão anterior de 01/07/2024 trazia um valor único
+// por capacidade, bem menor; esta separa janela de split.
+// [BTU/h, potência janela (W) ou null, potência split (W) ou null]
+const T9=[[5000,625,null],[6000,760,null],[7000,null,740],[7100,900,null],
+          [8500,1300,null],[9000,null,990],[10000,1400,null],[12000,1600,1260],
+          [14000,1900,null],[15000,2000,null],[18000,2600,2180],[21000,2800,null],
+          [22000,null,2430],[24000,null,2890],[30000,3600,3380],[36000,null,4195],
+          [48000,null,4990],[60000,null,6710]];
+// Combinações válidas, para montar o seletor: {btu, tipo, w}
+const T9OPTS=T9.flatMap(([b,j,s])=>[
+  ...(j?[{btu:b,tipo:"janela",w:j}]:[]),
+  ...(s?[{btu:b,tipo:"split", w:s}]:[])
+]);
+
+// NDU-001 Tab. 10 — ar-condicionado residencial
+const T10=[100,88,82,78,76,74,72,71];
+const t10=n=>n<=0?0:n<=8?T10[n-1]:n<=11?70:n<=14?68:n<=16?67:n<=22?66:n<=30?65:n<=50?64:62;
+
+// NDU-001 Tab. 11 — ar-condicionado não-residencial
+const t11=n=>n<=0?0:n<=10?100:n<=20?90:n<=30?82:n<=40?80:n<=50?77:75;
+
+// NDU-001 Tab. 16 — categorias de atendimento 220/127 V
+// lim = carga instalada (kW) para M/B, demanda (kVA) para T
+const CAT=[
+  {c:"M1",fases:1,fios:2,base:"CI", lim:3.8,  disj:"30/32", pvc:"6 (6)",   xlpe:"6 (6)",     ater:6,  elet:'3/4"',  caixa:"CMI-01"},
+  {c:"M2",fases:1,fios:2,base:"CI", lim:6.3,  disj:"50",    pvc:"10 (10)", xlpe:"6 (6)",     ater:6,  elet:'3/4"',  caixa:"CMI-01"},
+  {c:"M3",fases:1,fios:2,base:"CI", lim:8.8,  disj:"70",    pvc:"16 (16)", xlpe:"10 (10)",   ater:16, elet:'1"',    caixa:"CMI-01"},
+  {c:"B1",fases:2,fios:3,base:"CI", lim:10.1, disj:"50",    pvc:"10 (10)", xlpe:"10 (10)",   ater:10, elet:'3/4"',  caixa:"CMI-02"},
+  {c:"B2",fases:2,fios:3,base:"CI", lim:12.7, disj:"60/63", pvc:"16 (16)", xlpe:"10 (16)¹",  ater:16, elet:'1"',    caixa:"CMI-02"},
+  {c:"B3",fases:2,fios:3,base:"CI", lim:17.7, disj:"80",    pvc:"25 (25)", xlpe:"16 (25)¹",  ater:16, elet:'1 1/4"',caixa:"CMI-02"},
+  {c:"T1",fases:3,fios:4,base:"D",  lim:15.2, disj:"40",    pvc:"10 (10)", xlpe:"6 (10)¹",   ater:10, elet:'3/4"',  caixa:"CMI-02"},
+  {c:"T2",fases:3,fios:4,base:"D",  lim:19.0, disj:"50",    pvc:"16 (16)", xlpe:"10 (10)",   ater:16, elet:'1"',    caixa:"CMI-02"},
+  {c:"T3",fases:3,fios:4,base:"D",  lim:26.6, disj:"70",    pvc:"25 (25)", xlpe:"16 (25)¹",  ater:16, elet:'1 1/4"',caixa:"CMI-02"},
+  {c:"T4",fases:3,fios:4,base:"D",  lim:38.1, disj:"100",   pvc:"—",       xlpe:"25 (35)¹",  ater:16, elet:'1 1/2"',caixa:"CMI-02"},
+  {c:"T5",fases:3,fios:4,base:"D",  lim:57.1, disj:"150",   pvc:"—",       xlpe:"50 (70)¹",  ater:25, elet:'2"',    caixa:"CMD-BT 200"},
+  {c:"T6",fases:3,fios:4,base:"D",  lim:81.5, disj:"200",   pvc:"—",       xlpe:"95",        ater:50, elet:'2 1/2"',caixa:"CMD-BT 200"}
+];
+
+// NDU-003 Tab. 23 — entrada de serviço 220/127 V (4 fios / 3 fases)
+const T23=[
+  {max:15.2, mux:"10 / 10",     pvc:"10 / 10",       xlpe:"6 (10)¹ / 6 (10)¹",   ater:"6 ou 10", disj:40,  elet:'3/4"',    poste:100},
+  {max:18.7, mux:"16 / 16",     pvc:"16 / 16",       xlpe:"10 / 10",             ater:"10 ou 16",disj:50,  elet:'1"',      poste:100},
+  {max:29.3, mux:"25 / 25",     pvc:"35 / 25",       xlpe:"25 / 25",             ater:"16",      disj:80,  elet:'1 1/4"',  poste:200},
+  {max:37.0, mux:"35 / 25",     pvc:"50 / 25",       xlpe:"35 / 25",             ater:"25",      disj:100, elet:'1 1/2"',  poste:200},
+  {max:57.1, mux:"70 / 35",     pvc:"95 / 50",       xlpe:"50 (70)¹ / 25 (35)¹", ater:"50",      disj:150, elet:'2 1/2"',  poste:300},
+  {max:75.0, mux:"120 / 50",    pvc:"120 (185)¹ / 70 (95)¹", xlpe:"95 (120)¹ / 50 (70)¹", ater:"50 a 120", disj:200, elet:'3"', poste:300},
+  {max:94.6, mux:"—",           pvc:"2x (95) / 2x (50)",     xlpe:"2x (70) / 2x (35)",    ater:"35 ou 50", disj:250, elet:'2x (2 1/2")', poste:null},
+  {max:114.1,mux:"2x (95) / 2x (50)", pvc:"2x (95) / 2x (50)", xlpe:"2x (70) / 2x (35)",  ater:"35 ou 50", disj:300, elet:'2x (2 1/2")', poste:null}
+];
+
+// NDU-003 Tab. 28 — barramento de baixa tensão
+const T28=[[105,"4,76 x 9,52"],[211,"4,76 x 19,05"],[351,"4,76 x 31,75"],[422,"4,76 x 38,10"],
+           [492,"4,76 x 44,45"],[539,"6,35 x 38,10"],[633,"4,76 x 57,15"],[703,"4,76 x 63,50"],
+           [774,"4,76 x 69,85"],[899,"6,35 x 63,50"],[1079,"6,35 x 76,20"],[1419,"9,52 x 69,85"],
+           [1759,"15,87 x 57,15"],[2150,"15,87 x 69,85"],[2346,"15,87 x 76,20"]];
+
+// NDU-003 Tab. 19 e 20 — combinações padronizadas para agrupamentos de até
+// 3 unidades em 220/127 V. Estas dispensam projeto (item 6.7.1); qualquer
+// outra combinação segue pela via do projeto elétrico.
+const COMBOS_TAB=["3xM1","3xM2","3xB1","3xB2","3xT1","2xM1+B1","2xM2+B2","2xM1+T1",
+                  "2xM2+T1","2xB1+T1","2xB2+T1","M2+2xT1","B2+2xT1"];
+
+const VFF=220, VFN=127, FP=0.92;
+
+/* ══════════════════════════════════════════════════════
+   CÁLCULO
+   ══════════════════════════════════════════════════════ */
+
+function fatorD1(uso, C){
+  const t=T5[uso];
+  if(!t) return {d:0, desc:"—"};
+  if(t.tipo==="flat") return {d:C*t.f/100, desc:`${C.toFixed(2).replace('.',',')} kW × ${t.f}%`};
+  let rest=C, ant=0, d=0, partes=[];
+  for(const [lim,f] of t.faixas){
+    if(rest<=0) break;
+    const larg=Math.min(rest, lim-ant);
+    d+=larg*f/100;
+    partes.push(`${larg.toFixed(2).replace('.',',')}×${f}%`);
+    rest-=larg; ant=lim;
+  }
+  return {d, desc:partes.join(" + ")};
+}
+
+// Potência do aparelho pela Tab. 9. Se a capacidade não existir no tipo
+// informado, cai para o tipo disponível daquela capacidade.
+function potAC(btu, tipo){
+  const row = T9.find(r=>r[0]==btu) || T9.reduce((a,b)=>Math.abs(b[0]-btu)<Math.abs(a[0]-btu)?b:a);
+  const [ ,j,s] = row;
+  if(tipo==="janela") return j!=null ? j : (s||0);
+  return s!=null ? s : (j||0);
+}
+
+function calcUC(u){
+  const C_ilum = num(u.ilum);
+  const r1 = fatorD1(u.uso, C_ilum);
+  const d1 = r1.d;
+
+  const C2=num(u.agua_kw), n2=num(u.agua_n);
+  const d2 = C2*t6(n2)/100;
+
+  const C3=num(u.dom_kw), n3=num(u.dom_n);
+  const d3 = C3*t7(n3)/100;
+
+  const C4=num(u.fog_kw), n4=num(u.fog_n);
+  const d4 = C4*t8(n4)/100;
+
+  let C5=0, n5=0;
+  (u.acs||[]).forEach(a=>{ const q=num(a.q); if(q>0){ n5+=q; C5+=q*potAC(num(a.btu),a.tipo)/1000; } });
+  const resid = u.uso==="residencia";
+  const f5 = resid ? t10(n5) : t11(n5);
+  const d5 = C5*f5/100;
+
+  const d = d1+d2+d3+d4+d5;
+  const D = d/FP;
+  const CI = C_ilum+C2+C3+C4+C5;
+
+  // Enquadramento
+  const fases = +u.fases;
+  const cands = CAT.filter(c=>c.fases===fases);
+  let cat = cands.find(c => (c.base==="CI" ? CI : D) <= c.lim) || cands[cands.length-1];
+  const excede = (cat.base==="CI" ? CI : D) > cat.lim;
+
+  // Corrente
+  const I = fases===3 ? D*1000/(Math.sqrt(3)*VFF)
+          : fases===2 ? D*1000/VFF
+          : D*1000/VFN;
+
+  // Proteção: o limite tabelado da categoria, ou o disjuntor já instalado.
+  // Nota VII da Tab. 16 — a coluna é o limite superior da faixa; a proteção
+  // efetiva é calculada em função da demanda de projeto.
+  const disjTab = parseInt(String(cat.disj).split("/").pop(),10);
+  const inst = num(u.disj_inst);
+  const disjUsado = inst>0 ? inst : disjTab;
+  const subDim = inst>0 && inst < I;
+  const foraFaixa = inst>0 && inst > disjTab;
+
+  return {...u, C_ilum, d1, d1desc:r1.desc, d2, d3, d4, d5, f5, n5, C5, d, D, CI,
+          cat, excede, I, disjTab, disjUsado, subDim, foraFaixa};
+}
+
+/* ── Preenchimento automático por demanda alvo ──────────
+   Monta um kit de cargas coerente com o uso e o porte do alvo e resolve,
+   por busca binária, a carga de iluminação e tomadas que faz a demanda
+   fechar no valor pedido. Tudo continua editável depois. */
+
+function kitPara(uso, alvo){
+  const k={agua_n:0,agua_kw:0,dom_n:0,dom_kw:0,fog_n:0,fog_kw:0,acs:[]};
+  if(uso==="residencia"){
+    if(alvo>=5.5){ k.agua_n=1; k.agua_kw=5.5; }
+    if(alvo>=9.0){ k.dom_n=1;  k.dom_kw=1.4; }
+    if(alvo>=13 ){ k.acs=[{q:1,btu:12000,tipo:"split"}]; }
+    if(alvo>=17 ){ k.acs=[{q:2,btu:12000,tipo:"split"}]; }
+  } else {
+    const n = alvo>=30?4 : alvo>=22?3 : alvo>=15?2 : alvo>=9?1 : 0;
+    if(n) k.acs=[{q:n,btu:12000,tipo:"split"}];
+  }
+  return k;
+}
+
+function resolverUC(u, alvo){
+  alvo=Math.max(0,num(alvo));
+  let base={...u, ...kitPara(u.uso, alvo), ilum:0};
+
+  // Kit sozinho já passa do alvo: tira item por item, do maior para o menor.
+  const enxugar=[
+    b=>({...b, acs:[]}),
+    b=>({...b, dom_n:0, dom_kw:0}),
+    b=>({...b, agua_n:0, agua_kw:0})
+  ];
+  for(const corte of enxugar){
+    if(calcUC(base).D <= alvo+0.005) break;
+    base=corte(base);
+  }
+
+  // Alvo alto demais para o kit: cresce o ar-condicionado até ficar alcançável.
+  let guard=0;
+  while(calcUC({...base, ilum:75}).D < alvo && guard++<60){
+    const acs=[...(base.acs||[])];
+    if(acs.length) acs[0]={...acs[0], q:num(acs[0].q)+1};
+    else acs.push({q:1,btu:12000,tipo:"split"});
+    base={...base, acs};
+  }
+
+  // Busca binária na carga de iluminação e tomadas.
+  let lo=0, hi=75;
+  for(let i=0;i<60;i++){
+    const mid=(lo+hi)/2;
+    if(calcUC({...base, ilum:mid}).D < alvo) lo=mid; else hi=mid;
+  }
+  return {...base, ilum:+(((lo+hi)/2)).toFixed(2)};
+}
+
+function calcGeral(ucs){
+  const D = ucs.reduce((s,u)=>s+u.D,0);
+  const I = D*1000/(Math.sqrt(3)*VFF);
+  const row = T23.find(r=>D<=r.max) || T23[T23.length-1];
+
+  // Nota VIII Tab. 23 — o geral deve superar a maior proteção individual
+  const maiorInd = Math.max(0,...ucs.map(u=>u.disjUsado||0));
+  let disj = row.disj;
+  let elevado = false;
+  if(disj <= maiorInd){
+    const comerciais=[40,50,63,70,80,100,125,150,175,200,225,250,300,350,400];
+    disj = comerciais.find(x=>x>maiorInd) || maiorInd;
+    elevado = true;
+  }
+  const barra = (T28.find(b=>b[0]>=disj) || T28[T28.length-1])[1];
+  return {D, I, row, disj, elevado, barra, maiorInd};
+}
+
+function arranjo(g, n){
+  const dim = g.disj>250 ? "520 × 360 × 170 mm" : "520 × 260 × 170 mm";
+  if(g.disj<=100 && n<=3){
+    return {
+      tipo:"conjunto",
+      dim,
+      titulo:"Conjunto de Medição Agrupada CMI-03",
+      modulos:n+1,
+      itens:[
+        {q:n, o:"Caixa de medição individual polifásica", d:dim},
+        {q:1, o:"Caixa com barramento e disjuntor geral (até 100 A)", d:dim}
+      ],
+      desenho: n===2 ? "DESENHO 52" : "DESENHO 53",
+      nota:"Barramento e disjuntor geral integrados ao próprio conjunto — item 8.8.1 da NDU-003."
+    };
+  }
+  return {
+    tipo:"separado",
+    dim,
+    titulo:"Centro de medição com proteção geral independente",
+    modulos:n+2,
+    itens:[
+      {q:n, o:"Caixa de medição individual polifásica", d:dim},
+      {q:1, o:"Caixa de Distribuição (barramento)", d:dim},
+      {q:1, o:"Caixa de Proteção Geral (disjuntor tripolar)", d:dim}
+    ],
+    desenho:"DESENHO 54",
+    nota:"Proteção geral acima de 100 A — o conjunto CMI-03 integrado não é aplicável."
+  };
+}
+
+/* ══════════════════════════════════════════════════════
+   ESTADO
+   ══════════════════════════════════════════════════════ */
+
+const RTKEYS=["rt_nome","rt_titulo","rt_crea","rt_art","rt_fone","rt_email","rt_end"];
+const OBKEYS=["ob_prop","ob_doc","ob_mun","ob_end","ob_bairro","ob_cep","ob_trafo","ob_dist","ob_ramal","ob_isol","ob_poste","ob_data"];
+
+let UCS=[
+  {nome:"Unidade 01 — comercial", uso:"loja", fases:3, disj_inst:70, ilum:12,
+   agua_n:0, agua_kw:0, dom_n:0, dom_kw:0, fog_n:0, fog_kw:0, acs:[{q:3,btu:24000,tipo:"split"}]},
+  {nome:"Unidade 02", uso:"residencia", fases:2, disj_inst:40, ilum:3.5,
+   agua_n:1, agua_kw:4.4, dom_n:0, dom_kw:0, fog_n:0, fog_kw:0, acs:[]},
+  {nome:"Unidade 03", uso:"residencia", fases:2, disj_inst:40, ilum:3.5,
+   agua_n:1, agua_kw:4.4, dom_n:0, dom_kw:0, fog_n:0, fog_kw:0, acs:[]}
+];
+
+const $=id=>document.getElementById(id);
+const num=v=>{const n=parseFloat(String(v==null?"":v).replace(",","."));return isFinite(n)?n:0;};
+const fmt=(n,d=2)=>n.toLocaleString("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* ══════════════════════════════════════════════════════
+   RENDER — FORMULÁRIO DE UCs
+   ══════════════════════════════════════════════════════ */
+
+function renderUCs(){
+  const host=$("ucs");
+  host.innerHTML = UCS.map((u,i)=>{
+    const opts=Object.entries(T5).map(([k,v])=>
+      `<option value="${k}"${u.uso===k?" selected":""}>${esc(v.rot)}</option>`).join("");
+    const acs=(u.acs||[]).map((a,j)=>`
+      <div class="acrow">
+        <select data-uc="${i}" data-ac="${j}" data-k="modelo">
+          ${T9OPTS.map(o=>{
+            const val=o.btu+"|"+o.tipo;
+            const sel=(+a.btu===o.btu && (a.tipo||"split")===o.tipo)?" selected":"";
+            return `<option value="${val}"${sel}>${o.btu.toLocaleString("pt-BR")} BTU/h · ${o.tipo==="janela"?"janela":"split"} · ${o.w.toLocaleString("pt-BR")} W</option>`;
+          }).join("")}
+        </select>
+        <input type="number" min="0" step="1" value="${a.q}" data-uc="${i}" data-ac="${j}" data-k="q">
+        <span class="w">${fmt(num(a.q)*potAC(num(a.btu),a.tipo)/1000,3)} kW</span>
+        <button class="btn tiny danger" type="button" data-delac="${i}:${j}">×</button>
+      </div>`).join("");
+
+    return `
+    <div class="uc">
+      <div class="uchead">
+        <span class="tag">UC ${i+1}</span>
+        <input class="name" data-uc="${i}" data-k="nome" value="${esc(u.nome)}" style="background:transparent;border:none;padding:2px 0">
+        ${UCS.length>2?`<button class="btn tiny danger" type="button" data-deluc="${i}">remover</button>`:""}
+      </div>
+      <div class="ucbody">
+        <div class="grid g2">
+          <label><span>Tipo de uso (Tab. 5)</span><select data-uc="${i}" data-k="uso">${opts}</select></label>
+          <label><span>Ligação</span><select data-uc="${i}" data-k="fases">
+            <option value="1"${+u.fases===1?" selected":""}>Monofásica</option>
+            <option value="2"${+u.fases===2?" selected":""}>Bifásica</option>
+            <option value="3"${+u.fases===3?" selected":""}>Trifásica</option>
+          </select></label>
+          <label class="span2"><span>Disjuntor já instalado (A) — deixe vazio para usar o da categoria</span>
+            <input type="number" step="1" min="0" value="${u.disj_inst==null?"":u.disj_inst}" data-uc="${i}" data-k="disj_inst" placeholder="ex.: 70"></label>
+        </div>
+
+        <div class="autobar">
+          <label><span>Demanda alvo (kVA)</span>
+            <input type="number" step="0.01" min="0" value="${u.alvo==null?"":u.alvo}" data-uc="${i}" data-k="alvo" placeholder="ex.: 19,10"></label>
+          <button class="btn tiny primary" type="button" data-solve="${i}">⚡ Gerar cargas</button>
+          <span class="hint">as cargas continuam editáveis depois</span>
+        </div>
+
+        <div class="subhead">d₁ · Iluminação e tomadas de uso geral</div>
+        <div class="grid g2">
+          <label><span>Carga instalada (kW)</span><input type="number" step="0.01" min="0" value="${u.ilum}" data-uc="${i}" data-k="ilum"></label>
+        </div>
+
+        <div class="subhead">d₂ · Aquecimento de água — chuveiro, torneira, aquecedor</div>
+        <div class="grid g2">
+          <label><span>Nº de aparelhos</span><input type="number" step="1" min="0" value="${u.agua_n}" data-uc="${i}" data-k="agua_n"></label>
+          <label><span>Potência somada (kW)</span><input type="number" step="0.01" min="0" value="${u.agua_kw}" data-uc="${i}" data-k="agua_kw"></label>
+        </div>
+
+        <div class="subhead">d₃ · Secadora, micro-ondas, lava-louça, hidromassagem</div>
+        <div class="grid g2">
+          <label><span>Nº de aparelhos</span><input type="number" step="1" min="0" value="${u.dom_n}" data-uc="${i}" data-k="dom_n"></label>
+          <label><span>Potência somada (kW)</span><input type="number" step="0.01" min="0" value="${u.dom_kw}" data-uc="${i}" data-k="dom_kw"></label>
+        </div>
+
+        <div class="subhead">d₄ · Fogão e forno elétricos</div>
+        <div class="grid g2">
+          <label><span>Nº de aparelhos</span><input type="number" step="1" min="0" value="${u.fog_n}" data-uc="${i}" data-k="fog_n"></label>
+          <label><span>Potência somada (kW)</span><input type="number" step="0.01" min="0" value="${u.fog_kw}" data-uc="${i}" data-k="fog_kw"></label>
+        </div>
+
+        <div class="subhead">d₅ · Ar-condicionado — potência pela Tabela 9</div>
+        <div class="aclist">${acs || '<p class="hint">Nenhum aparelho lançado.</p>'}</div>
+        <div class="rowbtns"><button class="btn tiny" type="button" data-addac="${i}">+ aparelho</button></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ══════════════════════════════════════════════════════
+   RENDER — RESULTADOS
+   ══════════════════════════════════════════════════════ */
+
+function render(){
+  const ucs=UCS.map(calcUC);
+  const g=calcGeral(ucs);
+  const arr=arranjo(g, ucs.length);
+
+  // ── Verdict
+  const LIM=37.0;
+  const ok = g.disj<=100;
+  const pct=Math.min(100, g.D/LIM*100);
+  $("verdict").innerHTML=`
+    <div class="verdict ${ok?"ok":"bad"}">
+      <div class="top">
+        <span class="big">${fmt(g.D)}</span><span class="unit">kVA</span>
+        <span class="unit">· ${fmt(g.I,1)} A · disjuntor geral <b>${g.disj} A</b></span>
+      </div>
+      <div class="meter"><i style="width:${pct}%"></i><span class="mark" style="left:100%"></span></div>
+      <div class="meterlab"><span>0</span><span>limite da faixa de 100 A — 37,0 kVA</span></div>
+      <div class="msg">${ok
+        ? `Margem de <strong>${fmt(LIM-g.D)} kVA</strong> até o limite. Cabe no <strong>conjunto CMI-03 agrupado</strong> com barramento e disjuntor geral de até 100 A: ${arr.modulos} módulos, sem caixa de proteção geral separada.`
+        : `Excede o limite em <strong>${fmt(g.D-LIM)} kVA</strong>. A Tabela 23 não tem degrau entre 100 e 150 A, então sobem juntos o ramal (${esc(g.row.xlpe.split("/")[0].trim())} mm²), o aterramento (${esc(g.row.ater)} mm²) e o eletroduto (${esc(g.row.elet)}), e passa a exigir <strong>caixa de proteção geral independente</strong> — ${arr.modulos} módulos.`}</div>
+    </div>`;
+
+  // ── Alertas
+  const al=[];
+  if(ucs.length>3) al.push(["bad",
+    "Acima de 3 unidades consumidoras o empreendimento deixa de ser agrupamento: aplicam-se as Tabelas 23/24 e o cálculo de demanda do item 9.4 da NDU-003, com QDG e Centro de Medição."]);
+  ucs.forEach((u,i)=>{
+    if(u.excede) al.push(["bad",
+      `<b>UC ${i+1}</b> excede a maior categoria ${u.cat.fases===1?"monofásica":u.cat.fases===2?"bifásica":"trifásica"} da Tabela 16. Reveja o tipo de ligação ou a carga declarada.`]);
+    if(u.subDim) al.push(["bad",
+      `<b>UC ${i+1}</b>: disjuntor instalado de ${u.disjUsado} A abaixo da corrente de projeto (${fmt(u.I,1)} A). A proteção atuará em carga normal.`]);
+    if(u.foraFaixa) al.push(["warn",
+      `<b>UC ${i+1}</b>: disjuntor instalado de ${u.disjUsado} A acima do limite de ${u.disjTab} A da categoria ${u.cat.c}. Pela Nota VII da Tabela 16 a proteção segue a demanda de projeto — a analista pode exigir a troca ou o reenquadramento da unidade.`]);
+  });
+  const grossas=ucs.filter(u=>{
+    const m=/(\d+)\s*\((\d+)\)/.exec(u.cat.xlpe)||/(\d+)/.exec(u.cat.xlpe);
+    return m ? parseInt(m[1],10)>25 : false; });
+  if(grossas.length>1) al.push(["warn",
+    "Mais de uma unidade com ramal de entrada acima de 25 mm² — o DESENHO 14, Nota IX, exige <b>medição em armário</b>."]);
+  if(ucs.some(u=>["T5","T6"].includes(u.cat.c))) al.push(["bad",
+    "Unidade enquadrada em T5 ou T6 — a Nota X da Tabela 23 exige padrão de medição <b>externo</b> ao centro de medição agrupada."]);
+  if(g.elevado) al.push(["warn",
+    `Disjuntor geral elevado para <b>${g.disj} A</b>: a Nota VIII da Tabela 23 exige que a proteção geral supere a maior proteção individual (${g.maiorInd} A).`]);
+  // As Tabelas 19/20 listam o atendimento padronizado, que dispensa projeto
+  // (item 6.7.1). Fora delas, a via é o projeto elétrico — que é o que esta
+  // ferramenta produz. Informativo, não é uma pendência.
+  const assin=assinatura(ucs);
+  if(ucs.length<=3){
+    al.push(COMBOS_TAB.includes(assin)
+      ? ["info", `Combinação <b>${assin}</b> consta nas Tabelas 19/20. Pelo item 6.7.1 esse agrupamento pode ser ligado por declaração de carga, <b>sem projeto</b> — confira se o cliente não prefere essa via.`]
+      : ["info", `Combinação <b>${assin}</b> fora das Tabelas 19/20 — atendimento não padronizado. Pelo item 6.7.1 a via é a <b>apresentação de projeto elétrico</b> (item 5), com proteção geral conforme a Nota III. É exatamente o que este memorial atende.`]);
+  }
+  $("alerts").innerHTML=al.map(([k,t])=>`<div class="alert ${k==="bad"?"bad":k==="info"?"info":""}">${t}</div>`).join("");
+
+  // ── Tabela por UC
+  $("tabUC").innerHTML=`
+    <thead><tr><th>Unidade</th><th>Cat.</th><th>CI</th><th>d</th><th>D</th><th>I</th><th>Disj.</th><th>Ramal</th></tr></thead>
+    <tbody>${ucs.map((u,i)=>`
+      <tr>
+        <td>${esc(u.nome||("UC "+(i+1)))}</td>
+        <td><span class="chip">${u.cat.c}</span></td>
+        <td class="n">${fmt(u.CI)}</td>
+        <td class="n">${fmt(u.d)}</td>
+        <td class="n">${fmt(u.D)}</td>
+        <td class="n">${fmt(u.I,1)}</td>
+        <td class="n">${u.disjUsado} A${num(u.disj_inst)>0?' <span class="chip acc">inst.</span>':""}</td>
+        <td class="n">${ramalUC(u)}</td>
+      </tr>`).join("")}
+      <tr class="total">
+        <td>Σ demandas</td><td></td>
+        <td class="n">${fmt(ucs.reduce((s,u)=>s+u.CI,0))}</td>
+        <td class="n">${fmt(ucs.reduce((s,u)=>s+u.d,0))}</td>
+        <td class="n">${fmt(g.D)}</td>
+        <td class="n">${fmt(g.I,1)}</td>
+        <td class="n">${g.disj} A</td><td></td>
+      </tr></tbody>
+    <caption style="caption-side:bottom;text-align:left;padding:7px 9px;font-size:11px;color:var(--ink-3)">
+      CI = carga instalada (kW) · d = carga demandada (kW) · D = demanda (kVA) · I = corrente (A)</caption>`;
+
+  // ── Entrada geral
+  const isol=$("ob_isol").value;
+  $("specGeral").innerHTML=`
+    <dt>Demanda total</dt><dd>${fmt(g.D)} kVA</dd>
+    <dt>Corrente de projeto</dt><dd>${fmt(g.I,1)} A</dd>
+    <dt>Faixa da Tabela 23</dt><dd>até ${fmt(g.row.max,1)} kVA</dd>
+    <dt>Disjuntor geral tripolar</dt><dd>${g.disj} A</dd>
+    <dt>Ramal de conexão (multiplex Al)</dt><dd>${esc(g.row.mux)} mm²</dd>
+    <dt>Ramal de entrada ${isol==="pvc"?"PVC 70 °C":"XLPE/HEPR/EPR"}</dt><dd>${esc(isol==="pvc"?g.row.pvc:g.row.xlpe)} mm²</dd>
+    <dt>Condutor de aterramento</dt><dd>${esc(g.row.ater)} mm²</dd>
+    <dt>Eletroduto de entrada</dt><dd>${esc(g.row.elet)}</dd>
+    <dt>Barramento (Tab. 28)</dt><dd>${esc(g.barra)} mm</dd>
+    <dt>Poste auxiliar</dt><dd>${g.row.poste?g.row.poste+" daN":"não se aplica"}</dd>
+    <dt>Hastes de aterramento</dt><dd>3 × 3/4" × 2400 mm</dd>`;
+
+  // ── Caixas
+  $("caixas").innerHTML=`
+    <p style="margin:0 0 9px;font-size:13px"><b>${esc(arr.titulo)}</b> — ${arr.modulos} módulos · ${esc(arr.desenho)}</p>
+    <div class="tablewrap"><table class="data">
+      <thead><tr><th>Qt.</th><th>Módulo</th><th>Dimensão</th></tr></thead>
+      <tbody>${arr.itens.map(it=>`<tr><td class="n">${it.q}</td><td style="white-space:normal">${esc(it.o)}</td><td class="n">${esc(it.d)}</td></tr>`).join("")}</tbody>
+    </table></div>
+    <p class="hint" style="margin:9px 0 0">${esc(arr.nota)} Policarbonato homologado, tampa transparente com proteção UV (ETU 187.1 / ABNT NBR 15820). Topo a 1,70 m do piso acabado, ± 20 mm.</p>`;
+
+  $("doc").textContent=memorial(ucs,g,arr);
+}
+
+function ramalUC(u){
+  const isol=$("ob_isol").value;
+  const sub=$("ob_ramal").value==="subterraneo";
+  // Categorias T4 a T6 não têm coluna PVC na Tabela 16 — usa a de XLPE.
+  let s = (isol==="pvc" && /\d/.test(u.cat.pvc)) ? u.cat.pvc : u.cat.xlpe;
+  const m=/(\d+)\s*\((\d+)\)/.exec(s);
+  if(m) s = sub ? m[2] : m[1];
+  else s = s.replace(/[^\d]/g,"") || s;
+  return `${u.cat.fios-1}#${s} mm²`;
+}
+
+function assinatura(ucs){
+  const map={};
+  ucs.forEach(u=>{ map[u.cat.c]=(map[u.cat.c]||0)+1; });
+  const ordem=["M1","M2","M3","B1","B2","B3","T1","T2","T3","T4","T5","T6"];
+  return ordem.filter(c=>map[c]).map(c=>map[c]>1?`${map[c]}x${c}`:c).join("+");
+}
+
+/* ══════════════════════════════════════════════════════
+   MEMORIAL DESCRITIVO
+   ══════════════════════════════════════════════════════ */
+
+function memorial(ucs,g,arr){
+  const v=id=>($(id).value||"").trim();
+  const V=id=>v(id) || "[a preencher]";
+  const isol=$("ob_isol").value, sub=$("ob_ramal").value==="subterraneo";
+  const isolTxt = isol==="pvc" ? "PVC 70 °C" : "XLPE / HEPR / EPR 90 °C";
+  const ramalGeral = isol==="pvc" ? g.row.pvc : g.row.xlpe;
+  const n=ucs.length;
+  const ext=["","uma (01)","duas (02)","três (03)","quatro (04)"][n]||n;
+  const dataStr = v("ob_data")
+    ? new Date(v("ob_data")+"T12:00:00").toLocaleDateString("pt-BR",{day:"2-digit",month:"long",year:"numeric"})
+    : "____ de ______________ de ______";
+  const L=[];
+  const P=(...xs)=>L.push(xs.join(""));
+  const BR=()=>L.push("");
+
+  P(V("rt_nome").toUpperCase());
+  P(V("rt_titulo"), " — ", V("rt_crea"));
+  if(v("rt_end")) P(v("rt_end"));
+  P([v("rt_email"),v("rt_fone")].filter(Boolean).join("  ·  ") || "[contato]");
+  BR();
+  P("═".repeat(64));
+  P("MEMORIAL DESCRITIVO");
+  P("PROJETO ELÉTRICO DE ENTRADA DE ENERGIA DE USO COLETIVO");
+  P("MEDIÇÃO AGRUPADA — ", ext.toUpperCase(), " UNIDADES CONSUMIDORAS");
+  P("═".repeat(64));
+  BR();
+  P("PROPRIETÁRIO: ", V("ob_prop"));
+  P("CPF/CNPJ: ", V("ob_doc"));
+  P("ENDEREÇO: ", V("ob_end"), v("ob_bairro")?" — "+v("ob_bairro"):"", v("ob_cep")?" — CEP "+v("ob_cep"):"");
+  P("MUNICÍPIO: ", V("ob_mun"));
+  if(v("ob_trafo")) P("TRANSFORMADOR: ", v("ob_trafo"));
+  P("ART Nº: ", V("rt_art"));
+  BR();
+
+  P("1 — OBJETIVO");
+  BR();
+  P("Este memorial descreve as condições gerais do projeto elétrico de entrada de");
+  P("energia do tipo medição agrupada, em tensão secundária de distribuição");
+  P("220/127 V, destinada ao atendimento de ", ext, " unidades consumidoras.");
+  BR();
+  const assin=assinatura(ucs);
+  if(n<=3 && !COMBOS_TAB.includes(assin)){
+    P("O agrupamento apresenta a configuração ", assin, ", não relacionada entre as");
+    P("categorias padronizadas das Tabelas 19 a 22 da NDU-003. Nos termos do item");
+    P("6.7.1 da referida norma, os agrupamentos diversos daqueles apresentados nas");
+    P("tabelas são atendidos mediante apresentação de projeto elétrico, conforme o");
+    P("item 5, com dimensionamento a partir da demanda calculada e utilização de");
+    P("proteção geral. É esse o objeto deste documento.");
+    BR();
+  }
+
+  P("2 — NORMAS APLICÁVEIS");
+  BR();
+  P("· NDU-001 v7.0 (nov/2024) — Fornecimento em Tensão Secundária a Edificações");
+  P("  Individuais ou Agrupadas em até Três Unidades Consumidoras;");
+  P("· NDU-003 v8.1 (fev/2025) — Fornecimento em Tensão Primária e Secundária a");
+  P("  Agrupamentos ou Edificações de Múltiplas Unidades Consumidoras;");
+  P("· ABNT NBR 5410 — Instalações elétricas de baixa tensão;");
+  P("· ABNT NBR 15820 — Caixas para medição; ETU 187.1 — Caixas em policarbonato;");
+  P("· ABNT NBR NM 60898 — Disjuntores termomagnéticos.");
+  BR();
+
+  P("3 — CRITÉRIO DE CÁLCULO DA DEMANDA");
+  BR();
+  P("Conforme o item 9.3 da NDU-003, a demanda dos agrupamentos de até três");
+  P("unidades consumidoras é calculada pelo critério da carga instalada da NDU-001,");
+  P("item 9, pela expressão D(kVA) = d(kW) / 0,92, sendo d a soma das parcelas");
+  P("d1 a d5. Para as unidades residenciais o fator de demanda de iluminação e");
+  P("tomadas é aplicado por faixas acumulativas, conforme a Nota III da Tabela 5.");
+  P("As potências dos aparelhos de ar-condicionado seguem a Tabela 9 da NDU-001.");
+  BR();
+
+  ucs.forEach((u,i)=>{
+    P("3.", i+1, " — ", (u.nome||("UNIDADE "+(i+1))).toUpperCase(),
+      "  (", T5[u.uso].rot, " · ", u.cat.fases===1?"monofásica":u.cat.fases===2?"bifásica":"trifásica", ")");
+    BR();
+    P("     Carga instalada total ................. ", fmt(u.CI), " kW");
+    if(u.C_ilum>0){
+      P("     d1  iluminação e tomadas ............. ", fmt(u.d1), " kW");
+      P("         ", u.d1desc);
+    }
+    if(u.d2>0) P("     d2  aquecimento de água (", num(u.agua_n), " ap., ", t6(num(u.agua_n)), "%) ... ", fmt(u.d2), " kW");
+    if(u.d3>0) P("     d3  eletrodomésticos (", num(u.dom_n), " ap., ", t7(num(u.dom_n)), "%) ....... ", fmt(u.d3), " kW");
+    if(u.d4>0) P("     d4  fogão/forno elétrico (", num(u.fog_n), " ap., ", t8(num(u.fog_n)), "%) ... ", fmt(u.d4), " kW");
+    if(u.d5>0) P("     d5  ar-condicionado (", u.n5, " ap., ", u.f5, "%) ......... ", fmt(u.d5), " kW");
+    P("     ─────────────────────────────────────────────────");
+    P("     d  = ", fmt(u.d), " kW      D = d / 0,92 = ", fmt(u.D), " kVA");
+    P("     Corrente de projeto .................. ", fmt(u.I,1), " A");
+    P("     Categoria de atendimento (Tab. 16) ... ", u.cat.c);
+    P("     Proteção individual .................. ", u.disjUsado, " A");
+    P("     Ramal de saída ....................... ", ramalUC(u), " cobre, ", isolTxt);
+    P("     Eletroduto ........................... ", u.cat.elet);
+    BR();
+  });
+
+  P("3.", n+1, " — DEMANDA TOTAL DO EMPREENDIMENTO");
+  BR();
+  P("     D = ", ucs.map(u=>fmt(u.D)).join(" + "), " = ", fmt(g.D), " kVA");
+  P("     Corrente equivalente trifásica ....... ", fmt(g.I,1), " A");
+  P("     Faixa da Tabela 23 (220/127 V) ....... até ", fmt(g.row.max,1), " kVA");
+  BR();
+
+  P("4 — RAMAL DE LIGAÇÃO (CONEXÃO)");
+  BR();
+  P("4.1 Condutores multiplexados de alumínio com isolação XLPE 0,6/1 kV, fases em");
+  P("    alumínio CA e neutro nu, seção mínima ", g.row.mux, " mm² (fase/neutro),");
+  P("    conforme Tabela 23 da NDU-003.");
+  P("4.2 Distâncias mínimas ao solo conforme Tabela 29 da NDU-003: 4,50 m em locais");
+  P("    com circulação de veículos e 3,50 m em locais de circulação de pedestres.");
+  P("4.3 O ramal não deverá cortar terrenos de terceiros e terá percurso livre de");
+  P("    obstáculos. Distância aproximada do ponto de entrega à medição: ", V("ob_dist"), ".");
+  P("4.4 Afastamento mínimo de 700 mm de cabos de telefonia, sinalização e demais");
+  P("    infraestruturas compartilhadas.");
+  BR();
+
+  P("5 — RAMAL DE ENTRADA");
+  BR();
+  P("5.1 Condutores unipolares de cobre, isolação ", isolTxt, " para 0,6/1 kV,");
+  P("    contínuos e sem emendas, seção mínima ", ramalGeral, " mm² (fase/neutro).");
+  P("5.2 Instalação ", sub?"subterrânea":"embutida", ", em eletroduto de ", g.row.elet, ".");
+  P("5.3 Identificação por anilhas: fase A preta, fase B branca ou cinza, fase C");
+  P("    vermelha, neutro azul-claro e condutor de proteção verde.");
+  P("5.4 O condutor neutro é contínuo, sem qualquer dispositivo de seccionamento.");
+  if(g.row.poste)
+    P("5.5 Poste auxiliar em ", $("ob_poste").value==="concreto"?"concreto duplo T":"aço galvanizado a quente (tipo pesado, ABNT NBR 5624)",
+      ", esforço mínimo ", g.row.poste, " daN e altura mínima de 5,00 m.");
+  BR();
+
+  P("6 — PROTEÇÃO");
+  BR();
+  P("6.1 Proteção geral: disjuntor termomagnético tripolar de ", g.disj, " A,");
+  P("    capacidade de interrupção mínima de 5 kA simétricos, instalado em");
+  P("    compartimento lacrável, dimensionado conforme a Tabela 23 da NDU-003.");
+  if(g.elevado){
+    P("    Valor elevado em relação à faixa tabelada para atender a Nota VIII da");
+    P("    Tabela 23 — a proteção geral deve superar a maior proteção individual.");
+  }
+  P("6.2 Proteção individual: disjuntores termomagnéticos com capacidade de");
+  P("    interrupção mínima de 5 kA, instalados no compartimento de proteção de");
+  P("    cada caixa de medição, após o equipamento de medição:");
+  ucs.forEach((u,i)=>P("    · UC ", i+1, " — ", u.nome||"", ": ", u.disjUsado, " A (categoria ", u.cat.c, ")"));
+  P("6.3 Barramento de fase e neutro em cobre, seção mínima ", g.barra, " mm,");
+  P("    conforme Tabela 28 da NDU-003, com afastamento mínimo de 70 mm entre");
+  P("    barras e demais partes metálicas.");
+  P("6.4 DPS instalado antes da medição, em local próprio com dispositivo para");
+  P("    lacre, dimensionado conforme as Tabelas 3 e 4 da NDU-003 e a ABNT NBR");
+  P("    5410, com condutores de ligação de comprimento máximo de 500 mm.");
+  BR();
+
+  P("7 — CONJUNTO DE MEDIÇÃO");
+  BR();
+  P("7.1 ", arr.titulo, ", composto por ", arr.modulos, " módulos em policarbonato");
+  P("    de fornecedor homologado, tampa transparente com proteção UV, atendendo à");
+  P("    ETU 187.1 e à ABNT NBR 15820:");
+  arr.itens.forEach(it=>P("    · ", it.q, " × ", it.o, " — ", it.d));
+  P("7.2 Montagem conforme o ", arr.desenho, " da NDU-003. ", arr.nota);
+  P("7.3 Topo das caixas a 1,70 m do piso acabado, com tolerância de ± 20 mm, e");
+  P("    saliência de 2,5 ± 0,5 cm no topo.");
+  P("7.4 Cada unidade consumidora possui eletroduto de saída exclusivo, de modo a");
+  P("    não haver confusão entre ramais de consumidores distintos.");
+  P("7.5 Sobra mínima de 80 cm de condutor em cada caixa, para permitir a ligação");
+  P("    da proteção e da medição.");
+  BR();
+
+  P("8 — ATERRAMENTO");
+  BR();
+  P("8.1 Malha com no mínimo 3 hastes de aço cobreado de 3/4\" (17,30 mm) × 2400 mm,");
+  P("    conforme ABNT NBR 13571, espaçadas de no mínimo 2400 mm entre si.");
+  P("8.2 Condutor de aterramento de cobre, seção mínima ", g.row.ater, " mm², tão curto e");
+  P("    retilíneo quanto possível, sem emendas e sem dispositivos de seccionamento.");
+  P("8.3 Resistência de aterramento igual ou inferior a 20 Ω em qualquer época do");
+  P("    ano; não sendo atingido o valor, acrescentar hastes até obtê-lo.");
+  P("8.4 Conexões por conector cunha cabo/haste ou grampo GTDU cobreado, revestidas");
+  P("    com massa de calafetar e acessíveis à inspeção em caixa própria com tampa.");
+  P("8.5 Os condutores de aterramento são alojados em eletroduto exclusivo, sendo");
+  P("    vedado o compartilhamento das caixas de inspeção e eletrodutos com");
+  P("    quaisquer outros condutores ou acessórios.");
+  BR();
+
+  P("9 — ELETRODUTOS");
+  BR();
+  P("9.1 Eletroduto de entrada: ", g.row.elet, ", em aço galvanizado no trecho embutido");
+  P("    no solo ou na parede e PVC rígido no trecho aparente.");
+  P("9.2 Eletrodutos de saída, por unidade consumidora:");
+  ucs.forEach((u,i)=>P("    · UC ", i+1, " — ", u.cat.elet, " (categoria ", u.cat.c, ")"));
+  P("9.3 Eletroduto exclusivo do aterramento em PVC rígido de 32 mm.");
+  P("9.4 Na extremidade superior do eletroduto de entrada, instalar curva de 135°");
+  P("    ou cabeçote, para impedir a entrada de água.");
+  BR();
+
+  P("10 — IDENTIFICAÇÃO");
+  BR();
+  P("10.1 As caixas de medição são identificadas com o número da unidade por meio");
+  P("     de plaqueta metálica ou de acrílico com gravação permanente, não sendo");
+  P("     admitido o uso de adesivos.");
+  P("10.2 A marcação é feita no lado externo da tampa e no interior da caixa, do");
+  P("     lado esquerdo, sempre no alinhamento do visor. Letras maiúsculas e");
+  P("     números de 30 ± 5 mm de altura, com a borda superior a 50 ± 5 mm abaixo");
+  P("     do visor, em sequência lógica.");
+  BR();
+
+  P("11 — CONSIDERAÇÕES FINAIS");
+  BR();
+  P("11.1 Todos os materiais devem ser de fornecedores homologados pelo Grupo");
+  P("     Energisa, conforme a documentação Padrões Construtivos de Caixas de");
+  P("     Medição disponível no site de Normas Técnicas.");
+  P("11.2 Os equipamentos de medição são fornecidos e instalados pela");
+  P("     concessionária após aprovação do projeto e vistoria do padrão de entrada.");
+  P("11.3 Qualquer alteração de carga deve ser previamente submetida à Energisa.");
+  BR();BR();
+  P(V("ob_mun"), ", ", dataStr, ".");
+  BR();BR();BR();
+  P("     _______________________________________________");
+  P("     ", V("rt_nome"));
+  P("     ", V("rt_titulo"), " — ", V("rt_crea"));
+  P("     ART nº ", V("rt_art"));
+
+  return L.join("\n");
+}
+
+/* ══════════════════════════════════════════════════════
+   EVENTOS
+   ══════════════════════════════════════════════════════ */
+
+// Digitação: atualiza o estado e recalcula sem redesenhar o formulário,
+// para que o campo em foco não perca o cursor.
+$("ucs").addEventListener("input", e=>{
+  const t=e.target, i=t.dataset.uc;
+  if(i==null) return;
+  const j=t.dataset.ac;
+  if(j!=null){
+    const ac=UCS[+i].acs[+j];
+    if(t.dataset.k==="modelo"){
+      const [b,tp]=t.value.split("|");
+      ac.btu=+b; ac.tipo=tp;
+    } else {
+      ac[t.dataset.k]=t.value;
+    }
+    const lab=t.closest(".acrow").querySelector(".w");
+    if(lab) lab.textContent=fmt(num(ac.q)*potAC(num(ac.btu),ac.tipo)/1000,3)+" kW";
+  } else {
+    UCS[+i][t.dataset.k]=t.value;
+  }
+  render();
+});
+// Troca de select (uso, fases, capacidade): redesenha o bloco da unidade.
+$("ucs").addEventListener("change", e=>{
+  const t=e.target;
+  if(t.dataset.uc!=null && t.tagName==="SELECT"){ renderUCs(); render(); }
+});
+$("ucs").addEventListener("click", e=>{
+  const a=e.target.dataset.addac, d=e.target.dataset.delac, u=e.target.dataset.deluc,
+        s=e.target.dataset.solve;
+  if(a!=null){ (UCS[+a].acs=UCS[+a].acs||[]).push({q:1,btu:12000,tipo:"split"}); renderUCs(); render(); }
+  if(d!=null){ const [x,y]=d.split(":").map(Number); UCS[x].acs.splice(y,1); renderUCs(); render(); }
+  if(u!=null && UCS.length>2){ UCS.splice(+u,1); renderUCs(); render(); }
+  if(s!=null){
+    const i=+s, alvo=num(UCS[i].alvo);
+    if(alvo>0){ UCS[i]={...resolverUC(UCS[i], alvo), alvo:UCS[i].alvo}; renderUCs(); render(); }
+  }
+});
+
+$("solveAll").addEventListener("click", ()=>{
+  const total=num($("alvoTotal").value);
+  if(total<=0) return;
+  const atuais=UCS.map(u=>calcUC(u).D);
+  const soma=atuais.reduce((a,b)=>a+b,0);
+  UCS=UCS.map((u,i)=>{
+    const alvo = soma>0 ? total*atuais[i]/soma : total/UCS.length;
+    return {...resolverUC(u, alvo), alvo:+alvo.toFixed(2)};
+  });
+  renderUCs(); render();
+});
+$("addUC").addEventListener("click", ()=>{
+  if(UCS.length>=4) return;
+  UCS.push({nome:"Unidade "+(UCS.length+1), uso:"residencia", fases:2, disj_inst:"", ilum:4,
+            agua_n:1, agua_kw:5.5, dom_n:0, dom_kw:0, fog_n:0, fog_kw:0, acs:[]});
+  renderUCs(); render();
+});
+
+RTKEYS.concat(OBKEYS).forEach(k=>{
+  const el=$(k);
+  el.addEventListener("input", ()=>{ persist(); render(); });
+  el.addEventListener("change", ()=>{ persist(); render(); });
+});
+
+function persist(){
+  try{
+    const o={}; RTKEYS.forEach(k=>o[k]=$(k).value);
+    localStorage.setItem("mma_rt", JSON.stringify(o));
+  }catch(e){}
+}
+function restore(){
+  try{
+    const o=JSON.parse(localStorage.getItem("mma_rt")||"{}");
+    RTKEYS.forEach(k=>{ if(o[k]!=null) $(k).value=o[k]; });
+  }catch(e){}
+}
+
+$("copyBtn").addEventListener("click", async ()=>{
+  const b=$("copyBtn");
+  try{ await navigator.clipboard.writeText($("doc").textContent);
+       b.textContent="Copiado"; setTimeout(()=>b.textContent="Copiar",1600); }
+  catch(e){
+    const r=document.createRange(); r.selectNodeContents($("doc"));
+    const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+    b.textContent="Selecionado — Ctrl+C"; setTimeout(()=>b.textContent="Copiar",2400);
+  }
+});
+$("printBtn").addEventListener("click", ()=>window.print());
+
+
+/* ── init ── */
+$("ob_data").value=new Date().toISOString().slice(0,10);
+restore();
+renderUCs();
+render();
+
+</script>
+</body>
+</html>

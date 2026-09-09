@@ -8,6 +8,7 @@ Recebe um DadosProjeto e executa os 4 passos em sequência:
   2. Recalcular todas as fórmulas via LibreOffice
   3. Gerar o Excel de saída (aba SAIDA, valores apenas)
   4. Gerar o PDF de saída (abas corretas conforme tipo_fsa)
+     4b. Salvar a página da relação de carga também como PDF avulso
 
 Uso básico:
     from pipeline.run_pipeline import executar_pipeline
@@ -41,7 +42,7 @@ from modelos import DadosProjeto
 from step1_preencher import preencher_template
 from step2_recalcular import recalcular, verificar_campos_criticos
 from step3_gerar_xlsx import gerar_xlsx, validar_xlsx_saida
-from step4_gerar_pdf import gerar_pdf, validar_pdf
+from step4_gerar_pdf import gerar_pdf, gerar_pdf_relacao_carga, montar_abas, validar_pdf
 from step5_gerar_procuracao import gerar_procuracao_pdf
 from step6_gerar_txt import gerar_txt_dados
 
@@ -67,6 +68,7 @@ def executar_pipeline(
         dict com:
             "xlsx": caminho do arquivo .xlsx gerado
             "pdf": caminho do arquivo .pdf gerado
+            "relacao_carga": caminho do .pdf avulso da relação de carga
             "relatorio": dict com resultados de cada step
             "ok": True se tudo correu bem
 
@@ -84,6 +86,7 @@ def executar_pipeline(
         "step2": None,
         "step3": None,
         "step4": None,
+        "step4b": None,
         "step5": None,
         "step6": None,
     }
@@ -146,12 +149,14 @@ def executar_pipeline(
 
     # ── STEP 4: Gerar PDF ─────────────────────────────────────────
     print(f"\n[STEP 4] Gerando PDF...")
+    abas_pdf = montar_abas(caminho_preenchido, dados.tipo_fsa)
     caminho_pdf = gerar_pdf(
         caminho_preenchido=caminho_preenchido,
         pasta_saida=pasta_saida,
         nome_titular=dados.titular,
         codigo_uc=dados.codigo_uc,
         tipo_fsa=dados.tipo_fsa,
+        abas=abas_pdf,
     )
 
     validacao_pdf = None
@@ -170,6 +175,27 @@ def executar_pipeline(
         "validacao": validacao_pdf,
         "ok": (not validar) or (validacao_pdf and validacao_pdf["ok"]),
     }
+
+    # ── STEP 4b: Relação de carga como PDF avulso ─────────────────
+    # A página continua no PDF do memorial; este é um arquivo extra.
+    print(f"\n[STEP 4b] Extraindo relação de carga avulsa...")
+    try:
+        caminho_relacao_carga = gerar_pdf_relacao_carga(
+            caminho_pdf=caminho_pdf,
+            pasta_saida=pasta_saida,
+            nome_titular=dados.titular,
+            codigo_uc=dados.codigo_uc,
+            abas=abas_pdf,
+        )
+        relatorio["step4b"] = {"caminho": caminho_relacao_carga, "ok": caminho_relacao_carga is not None}
+        if caminho_relacao_carga:
+            print(f"[STEP 4b] OK")
+        else:
+            print(f"[STEP 4b] AVISO — página da relação de carga não localizada")
+    except Exception as e:
+        print(f"[STEP 4b] AVISO — Falha ao extrair relação de carga: {e}")
+        caminho_relacao_carga = None
+        relatorio["step4b"] = {"error": str(e), "ok": False}
 
     # ── STEP 5: Gerar Procuração ─────────────────────────────────────────
     print(f"\n[STEP 5] Gerando PDF da Procuração...")
@@ -198,7 +224,7 @@ def executar_pipeline(
         relatorio["step6"] = {"error": str(e), "ok": False}
 
     # ── Resultado final ───────────────────────────────────────────
-    tudo_ok = all(v["ok"] for k, v in relatorio.items() if v is not None and k not in ("step5", "step6"))
+    tudo_ok = all(v["ok"] for k, v in relatorio.items() if v is not None and k not in ("step4b", "step5", "step6"))
 
     print(f"\n{'='*60}")
     if tudo_ok:
@@ -207,6 +233,8 @@ def executar_pipeline(
         print(f"  PIPELINE CONCLUIDO COM AVISOS")
     print(f"  Excel: {Path(caminho_xlsx).name}")
     print(f"  PDF:   {Path(caminho_pdf).name}")
+    if caminho_relacao_carga:
+        print(f"  Relacao de carga: {Path(caminho_relacao_carga).name}")
     if caminho_procuracao:
         print(f"  Procuracao: {Path(caminho_procuracao).name}")
     if caminho_txt:
@@ -216,6 +244,7 @@ def executar_pipeline(
     return {
         "xlsx": caminho_xlsx,
         "pdf": caminho_pdf,
+        "relacao_carga": caminho_relacao_carga,
         "procuracao": caminho_procuracao,
         "txt": caminho_txt,
         "relatorio": relatorio,
@@ -303,5 +332,6 @@ if __name__ == "__main__":
     print(f"Arquivos gerados em: {PASTA_SAIDA}")
     print(f"  Excel: {resultado['xlsx']}")
     print(f"  PDF:   {resultado['pdf']}")
+    print(f"  Relacao de carga: {resultado.get('relacao_carga')}")
     print(f"  Procuracao: {resultado.get('procuracao')}")
     print(f"  OK:    {resultado['ok']}")

@@ -5,11 +5,17 @@ API HTTP para o pipeline de geração de documentos GD.
 
 Endpoints:
   GET  /                         → Frontend (formulário web)
+  GET  /ferramentas              → Ferramentas de dimensionamento
+  GET  /medicao-agrupada         → Memorial de medição agrupada (NDU-001/003)
   GET  /static/<file>            → Arquivos estáticos
   POST /api/gerar                → Gera .xlsx + .pdf e retorna links
   GET  /api/download/<file>      → Download do arquivo gerado
   GET  /api/equipamentos         → Lista de fabricantes/modelos (para autocomplete)
   GET  /api/status               → Health check
+  GET  /localizacao              → Ferramenta de localização (mapa)
+  GET  /api/mapa/config          → Chave pública do Maps JS (para o navegador)
+  GET  /api/mapa/utm             → Converte lat/lon em UTM (E, N, fuso)
+  POST /api/mapa/capturar        → PNG do local, com UTM e bússola desenhadas
 
 Uso:
   python server.py [porta]
@@ -141,7 +147,14 @@ def _get_token_do_request(handler) -> str | None:
 
 
 def _rota_publica(path: str) -> bool:
-    """Rotas que não requerem autenticação."""
+    """Rotas que não requerem autenticação.
+
+    As páginas HTML têm rota própria (/, /ferramentas, /medicao-agrupada) e
+    ficam atrás da sessão; servi-las também por /static/ abriria um desvio da
+    autenticação. Assets (imagens, css, js) seguem públicos.
+    """
+    if path.startswith("/static/") and path.endswith(".html"):
+        return False
     return path in ("/login", "/api/login") or path.startswith("/static/")
 
 
@@ -247,6 +260,12 @@ class APIHandler(SimpleHTTPRequestHandler):
         elif path == "/ferramentas" or path == "/ferramentas.html":
             self._serve_file(STATIC_DIR / "ferramentas.html", "text/html")
 
+        elif path == "/medicao-agrupada" or path == "/medicao-agrupada.html":
+            self._serve_file(STATIC_DIR / "medicao-agrupada.html", "text/html")
+
+        elif path == "/localizacao" or path == "/localizacao.html":
+            self._serve_file(STATIC_DIR / "localizacao.html", "text/html")
+
         elif path.startswith("/static/"):
             filename = path[len("/static/"):]
             filepath = STATIC_DIR / filename
@@ -315,6 +334,12 @@ class APIHandler(SimpleHTTPRequestHandler):
         elif path.startswith("/api/temperatura"):
             self._handle_temperatura(parsed)
 
+        elif path == "/api/mapa/config":
+            self._handle_mapa_config()
+
+        elif path.startswith("/api/mapa/utm"):
+            self._handle_mapa_utm(parsed)
+
         else:
             self._json_response(404, {"error": "Rota não encontrada"})
 
@@ -342,6 +367,8 @@ class APIHandler(SimpleHTTPRequestHandler):
             self._handle_admin_usuarios()
         elif path == "/api/admin/usuarios/remover":
             self._handle_remover_usuario()
+        elif path == "/api/mapa/capturar":
+            self._handle_mapa_capturar()
         else:
             self._json_response(404, {"error": f"Rota POST não encontrada: {path}"})
 
@@ -501,6 +528,10 @@ class APIHandler(SimpleHTTPRequestHandler):
                 "xlsx_nome": xlsx_name,
                 "pdf_nome": pdf_name,
             }
+            if resultado.get("relacao_carga") and Path(resultado["relacao_carga"]).exists():
+                rc_name = Path(resultado["relacao_carga"]).name
+                response["relacao_carga_url"] = f"/api/download/{exec_id}/{urllib.parse.quote(rc_name)}"
+                response["relacao_carga_nome"] = rc_name
             if resultado.get("procuracao") and Path(resultado["procuracao"]).exists():
                 proc_name = Path(resultado["procuracao"]).name
                 response["procuracao_url"] = f"/api/download/{exec_id}/{urllib.parse.quote(proc_name)}"
@@ -613,6 +644,119 @@ class APIHandler(SimpleHTTPRequestHandler):
         "SC": "Santa Catarina", "SP": "São Paulo", "SE": "Sergipe",
         "TO": "Tocantins",
     }
+
+    def _handle_mapa_utm(self, parsed):
+        """GET /api/mapa/utm?lat=-11.86&lon=-55.5
+
+        A conversão vive só no servidor (pipeline/utm.py). Reimplementá-la
+        em JavaScript criaria duas fontes de verdade para justamente a
+        conta que mais gera erro no memorial — a banda do fuso.
+        """
+        from utm import latlon_para_utm
+
+        params = urllib.parse.parse_qs(parsed.query)
+        try:
+            lat = float(params.get("lat", [""])[0])
+            lon = float(params.get("lon", [""])[0])
+        except (ValueError, IndexError):
+            self._json_response(400, {"error": "Parâmetros 'lat' e 'lon' são obrigatórios"})
+            return
+
+        if not (-85 <= lat <= 85) or not (-180 <= lon <= 180):
+            self._json_response(400, {"error": "Coordenada fora do intervalo válido"})
+            return
+
+        u = latlon_para_utm(lat, lon)
+        u["texto"] = (f"E: {u['easting']:,.0f} m   ·   "
+                      f"N: {u['northing']:,.0f} m   ·   "
+                      f"Fuso {u['fuso']}").replace(",", ".")
+        self._json_response(200, u)
+
+    def _handle_mapa_config(self):
+        """GET /api/mapa/config
+
+        Devolve a chave do Maps JavaScript API. Essa chave é
+        necessariamente pública — ela aparece no HTML de qualquer página
+        que carregue o mapa. A proteção dela é a restrição por referrer
+        HTTP no console do Google, não o sigilo.
+
+        A chave da Static API (GOOGLE_MAPS_API_KEY) NÃO é devolvida aqui:
+        essa fica só no servidor.
+        """
+        chave = os.environ.get("GOOGLE_MAPS_BROWSER_KEY", "").strip()
+        if not chave:
+            self._json_response(503, {
+                "error": "GOOGLE_MAPS_BROWSER_KEY não configurada no Space "
+                         "(Settings → Variables and secrets)."
+            })
+            return
+        self._json_response(200, {"browser_key": chave})
+
+    def _handle_mapa_capturar(self):
+        """POST /api/mapa/capturar
+
+        Body: {"lat": -11.86, "lon": -55.5, "zoom": 19, "tipo": "hybrid",
+               "lat_centro": -11.86, "lon_centro": -55.5}
+
+        `lat`/`lon` sao do alfinete cravado — e o que vira marcador e
+        legenda. `lat_centro`/`lon_centro` sao o enquadramento escolhido, e
+        podem diferir: o usuario crava o ponto no telhado e depois afasta
+        para pegar contexto. Omitidos, o ponto e o proprio centro.
+
+        Responde com o PNG (image/png), pronto para ir ao clipboard.
+        """
+        import mapa
+
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            payload = json.loads(self.rfile.read(content_length).decode("utf-8"))
+        except (ValueError, json.JSONDecodeError):
+            self._json_response(400, {"error": "JSON inválido"})
+            return
+
+        try:
+            lat = float(payload["lat"])
+            lon = float(payload["lon"])
+        except (KeyError, TypeError, ValueError):
+            self._json_response(400, {"error": "Campos 'lat' e 'lon' são obrigatórios"})
+            return
+
+        if not (-85 <= lat <= 85) or not (-180 <= lon <= 180):
+            self._json_response(400, {"error": "Coordenada fora do intervalo válido"})
+            return
+
+        try:
+            centro = payload.get("lat_centro"), payload.get("lon_centro")
+            png = mapa.capturar(
+                lat=lat,
+                lon=lon,
+                zoom=int(payload.get("zoom", 19)),
+                tipo=str(payload.get("tipo", "hybrid")),
+                lat_centro=float(centro[0]) if centro[0] is not None else None,
+                lon_centro=float(centro[1]) if centro[1] is not None else None,
+            )
+        except RuntimeError as e:
+            # Chave ausente — configuração, não erro de uso
+            self._json_response(503, {"error": str(e)})
+            return
+        except ValueError as e:
+            self._json_response(400, {"error": str(e)})
+            return
+        except Exception as e:
+            print(f"  [mapa] Falha ao capturar: {e}")
+            traceback.print_exc()
+            self._json_response(502, {
+                "error": "Não foi possível obter a imagem do mapa. "
+                         "Verifique a chave e o faturamento no Google Cloud."
+            })
+            return
+
+        self.send_response(200)
+        self.send_header("Content-Type", "image/png")
+        self.send_header("Content-Length", str(len(png)))
+        self._cors_headers()
+        self.end_headers()
+        self.wfile.write(png)
 
     def _handle_temperatura(self, parsed):
         """GET /api/temperatura?cidade=Campinas&uf=SP
