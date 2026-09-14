@@ -132,17 +132,58 @@ def _desenhar_bussola(draw: ImageDraw.ImageDraw, cx: int, cy: int, r: int):
     draw.text((tx, ty), "N", font=f, fill=preto)
 
 
+def _gota(draw: ImageDraw.ImageDraw, cx: float, cy: float, r: float,
+          altura: float, cor):
+    """
+    Desenha uma gota (cabeça redonda + ponta) com a PONTA exatamente em
+    (cx, cy). `r` é o raio da cabeça e `altura` a distância da ponta ao
+    centro da cabeça.
+    """
+    hy = cy - altura
+    # Pontos de tangência da ponta com a cabeça: o ângulo entre o eixo
+    # centro→ponta e o raio até a tangente satisfaz cos(t) = r / altura.
+    t = math.acos(min(1.0, r / altura))
+    dx, dy = r * math.sin(t), r * math.cos(t)
+    draw.polygon([(cx, cy), (cx - dx, hy + dy), (cx + dx, hy + dy)], fill=cor)
+    draw.ellipse([cx - r, hy - r, cx + r, hy + r], fill=cor)
+
+
 def _desenhar_marcador(draw: ImageDraw.ImageDraw, cx: int, cy: int, r: int):
-    """Cruz com círculo no ponto clicado — discreta, não tapa o telhado."""
+    """
+    Alfinete de mapa no ponto cravado — o mesmo símbolo que o usuário viu
+    no navegador, para não restar dúvida de que a localização é ali.
+
+    `r` é o raio da cabeça. A ponta fica exatamente em (cx, cy); a cabeça
+    sobe acima do ponto, então o telhado embaixo continua visível.
+    """
     branco = (255, 255, 255, 255)
     vermelho = (220, 30, 30, 255)
-    for cor, w in ((branco, 5), (vermelho, 2)):
-        draw.line([(cx - r, cy), (cx - r * 0.35, cy)], fill=cor, width=w)
-        draw.line([(cx + r * 0.35, cy), (cx + r, cy)], fill=cor, width=w)
-        draw.line([(cx, cy - r), (cx, cy - r * 0.35)], fill=cor, width=w)
-        draw.line([(cx, cy + r * 0.35), (cx, cy + r)], fill=cor, width=w)
-        draw.ellipse([cx - r * 0.30, cy - r * 0.30, cx + r * 0.30, cy + r * 0.30],
-                     outline=cor, width=w)
+    escuro = (120, 10, 10, 255)
+    altura = r * 2.6
+    borda = max(3, int(r * 0.22))
+
+    # Sombra suave sob a ponta: ancora o alfinete no chão e ajuda sobre
+    # telhado claro.
+    draw.ellipse([cx - r * 0.9, cy - r * 0.28, cx + r * 0.9, cy + r * 0.28],
+                 fill=(0, 0, 0, 110))
+
+    # Contorno branco grosso (gota maior, ponta um pouco mais baixa) e a
+    # gota vermelha por cima.
+    _gota(draw, cx, cy + borda * 0.9, r + borda, altura + borda * 0.9 + borda * 0.6, branco)
+    _gota(draw, cx, cy, r, altura, vermelho)
+
+    # Miolo da cabeça: anel escuro e centro branco, como o pino clássico.
+    hy = cy - altura
+    ri = r * 0.42
+    draw.ellipse([cx - ri, hy - ri, cx + ri, hy + ri], fill=escuro)
+    ri2 = r * 0.30
+    draw.ellipse([cx - ri2, hy - ri2, cx + ri2, hy + ri2], fill=branco)
+
+    # Ponto exato: um pequeno disco branco com centro vermelho na ponta,
+    # para a coordenada cravada ficar legível mesmo com a cabeça acima.
+    rp = max(2, int(r * 0.18))
+    draw.ellipse([cx - rp - 1, cy - rp - 1, cx + rp + 1, cy + rp + 1], fill=branco)
+    draw.ellipse([cx - rp, cy - rp, cx + rp, cy + rp], fill=vermelho)
 
 
 def desenhar_overlay(img: Image.Image, lat: float, lon: float,
@@ -161,10 +202,13 @@ def desenhar_overlay(img: Image.Image, lat: float, lon: float,
 
     escala = min(L, A) / 640.0
 
-    # ── Marcador no ponto cravado ─────────────────────────────────────
+    # ── Alfinete no ponto cravado ─────────────────────────────────────
+    # r = raio da cabeça; o alfinete inteiro tem ~3,3r de altura acima da
+    # ponta, então com r=26 ele ocupa ~14 % do lado da imagem — visível
+    # de longe sem esconder a vizinhança do ponto.
     if xy_marcador is not None:
         _desenhar_marcador(draw, int(xy_marcador[0]), int(xy_marcador[1]),
-                           int(22 * escala))
+                           int(26 * escala))
 
     # ── Bussola, canto superior direito ───────────────────────────────
     # Posicao folgada o bastante para o fundo da bussola caber inteiro:
