@@ -25,7 +25,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from utm import latlon_para_utm, banda, _A, _E2, _K0
+from utm import (latlon_para_utm, utm_para_latlon, interpretar_fuso,
+                 formatar_dms, banda, _A, _E2, _K0)
 
 
 def _arco_meridional(phi: float) -> float:
@@ -123,6 +124,39 @@ def main() -> int:
         print(f"  {'OK ' if ok else 'FALHA '}lat={lat:8.2f} → {obtida}  (esperado {esperada})")
         if not ok:
             falhas.append(f"banda lat={lat}: {obtida} != {esperada}")
+
+    print("\n── Ida e volta lat/lon → UTM → lat/lon (inversa do TXT) ──")
+    for nome, lat, lon in PONTOS:
+        u = latlon_para_utm(lat, lon)
+        lat2, lon2 = utm_para_latlon(u["easting"], u["northing"], u["zona"], u["hemisferio"])
+        # 1e-7 grau ≈ 1 cm; a inversa fecha bem abaixo disso.
+        d_m = math.hypot((lat2 - lat) * 111320, (lon2 - lon) * 111320 * math.cos(math.radians(lat)))
+        ok = d_m < TOL_M
+        print(f"  {'OK ' if ok else 'FALHA '}{nome:18} erro={d_m * 1000:7.3f} mm")
+        if not ok:
+            falhas.append(f"inversa {nome}: {d_m:.4f} m")
+
+    print("\n── Exemplo do escritório: X 661615.64 / Y 8690572.42 / 21L ──")
+    zona = interpretar_fuso("21L")
+    lat2, lon2 = utm_para_latlon(661615.64, 8690572.42, *zona)
+    dms = formatar_dms(lat2, lon2)
+    esperado_dec = "-11.841238, -55.516384"
+    esperado_dms = "11°50'28.5\"S 55°30'59.0\"W"
+    obtido_dec = f"{lat2:.6f}, {lon2:.6f}"
+    for rotulo, obtido, esperado in (("decimal", obtido_dec, esperado_dec), ("DMS", dms, esperado_dms)):
+        ok = obtido == esperado
+        print(f"  {'OK ' if ok else 'FALHA '}{rotulo:8} {obtido}  (esperado {esperado})")
+        if not ok:
+            falhas.append(f"exemplo {rotulo}: {obtido} != {esperado}")
+
+    print("\n── Leitura do rótulo do fuso ──")
+    for texto, esperado in (("21L", (21, "S")), ("21 K", (21, "S")), ("21", (21, "S")),
+                            ("18N", (18, "N")), ("", None), ("L", None)):
+        obtido = interpretar_fuso(texto)
+        ok = obtido == esperado
+        print(f"  {'OK ' if ok else 'FALHA '}{texto!r:8} → {obtido}  (esperado {esperado})")
+        if not ok:
+            falhas.append(f"fuso {texto!r}: {obtido} != {esperado}")
 
     print()
     if falhas:

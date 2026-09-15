@@ -113,3 +113,92 @@ def legenda(lat: float, lon: float) -> str:
     """Linha pronta para queimar na imagem, no formato definido com o usuário."""
     u = latlon_para_utm(lat, lon)
     return f"E: {u['easting']:.0f} m  ·  N: {u['northing']:.0f} m  ·  Fuso {u['fuso']}"
+
+
+def interpretar_fuso(fuso: str):
+    """
+    Lê o rótulo de fuso digitado no formulário ("21L", "21 L", "21", "21k")
+    e devolve (zona, hemisferio) ou None quando não dá para saber a zona.
+
+    A letra define o hemisfério: C..M é sul, N..X é norte. Sem letra,
+    assume sul — a região de atuação é Mato Grosso.
+    """
+    s = str(fuso or "").strip().upper()
+    digitos = "".join(c for c in s if c.isdigit())
+    if not digitos:
+        return None
+    z = int(digitos)
+    if not 1 <= z <= 60:
+        return None
+    letras = [c for c in s if c.isalpha()]
+    hemisferio = "S"
+    if letras and letras[-1] in _BANDAS:
+        hemisferio = "N" if letras[-1] >= "N" else "S"
+    return z, hemisferio
+
+
+def utm_para_latlon(easting: float, northing: float, zona: int,
+                    hemisferio: str = "S") -> tuple:
+    """
+    Inversa de latlon_para_utm: UTM (WGS84) → (lat, lon) em graus decimais.
+
+    Mesma série de Krüger, no sentido contrário, com a latitude recuperada
+    da latitude conforme por Newton (formulação de Karney) em vez de série
+    truncada — fecha a ida e volta em menos de 1 mm.
+    """
+    n = _F / (2 - _F)
+    n2, n3, n4 = n * n, n ** 3, n ** 4
+    A_ret = _A / (1 + n) * (1 + n2 / 4 + n4 / 64)
+
+    y = northing - (_FALSE_NORTHING if hemisferio.upper() == "S" else 0.0)
+    xi = y / (_K0 * A_ret)
+    eta = (easting - _FALSE_EASTING) / (_K0 * A_ret)
+
+    betas = (
+        n / 2 - 2 * n2 / 3 + 37 * n3 / 96,
+        n2 / 48 + n3 / 15,
+        17 * n3 / 480,
+        4397 * n4 / 161280,
+    )
+    xi_, eta_ = xi, eta
+    for j, bj in enumerate(betas, start=1):
+        xi_ -= bj * math.sin(2 * j * xi) * math.cosh(2 * j * eta)
+        eta_ -= bj * math.cos(2 * j * xi) * math.sinh(2 * j * eta)
+
+    # Latitude conforme (tau') e longitude relativa ao meridiano central
+    tau_l = math.sin(xi_) / math.hypot(math.sinh(eta_), math.cos(xi_))
+    dlam = math.atan2(math.sinh(eta_), math.cos(xi_))
+
+    # tau (= tan lat) a partir de tau' por Newton
+    e = math.sqrt(_E2)
+    tau = tau_l
+    for _ in range(6):
+        sigma = math.sinh(e * math.atanh(e * tau / math.sqrt(1 + tau * tau)))
+        f_tau = tau * math.sqrt(1 + sigma * sigma) - sigma * math.sqrt(1 + tau * tau) - tau_l
+        df = ((math.sqrt((1 + sigma * sigma) * (1 + tau * tau)) - sigma * tau)
+              * (1 - _E2) * math.sqrt(1 + tau * tau) / (1 + (1 - _E2) * tau * tau))
+        passo = f_tau / df
+        tau -= passo
+        if abs(passo) < 1e-15:
+            break
+
+    lat = math.degrees(math.atan(tau))
+    lon0 = -180 + (zona - 1) * 6 + 3
+    lon = lon0 + math.degrees(dlam)
+    return lat, lon
+
+
+def _dms(valor: float, pos: str, neg: str) -> str:
+    """Graus, minutos e segundos com uma casa, no formato do Google Maps."""
+    letra = neg if valor < 0 else pos
+    # Arredonda em décimos de segundo antes de separar, para 59,96" virar
+    # 1'00,0" e não 59,10".
+    decimos = int(round(abs(valor) * 36000))
+    g, resto = divmod(decimos, 36000)
+    m, dec = divmod(resto, 600)
+    return f"{g}°{m:02d}'{dec / 10:04.1f}\"{letra}"
+
+
+def formatar_dms(lat: float, lon: float) -> str:
+    """Ex.: 11°50'28.5"S 55°30'59.0"W"""
+    return f"{_dms(lat, 'N', 'S')} {_dms(lon, 'E', 'W')}"
